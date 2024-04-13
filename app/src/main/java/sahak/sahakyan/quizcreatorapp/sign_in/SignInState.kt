@@ -1,4 +1,4 @@
-package sahak.sahakyan.quizcreatorapp.presentation.sign_in
+package sahak.sahakyan.quizcreatorapp.sign_in
 
 data class SignInState(
     val isSignInSuccessful: Boolean = false,

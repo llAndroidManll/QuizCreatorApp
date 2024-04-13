@@ -1,4 +1,4 @@
-package sahak.sahakyan.quizcreatorapp.presentation.sign_in
+package sahak.sahakyan.quizcreatorapp.sign_in
 
 import android.content.Context
 import android.content.Intent
@@ -43,6 +43,7 @@ class GoogleAuthUiClient(
                     UserData(
                         userId = uid,
                         username = displayName,
+                        email = email,
                         profilePictureUrl = photoUrl?.toString()
                     )
                 },

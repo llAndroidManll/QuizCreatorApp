@@ -1,9 +1,11 @@
-package sahak.sahakyan.quizcreatorapp.presentation.sign_in
+package sahak.sahakyan.quizcreatorapp.viewmodel
 
 import androidx.lifecycle.ViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import sahak.sahakyan.quizcreatorapp.sign_in.SignInResult
+import sahak.sahakyan.quizcreatorapp.sign_in.SignInState
 
 class SignInViewModel: ViewModel() {
 

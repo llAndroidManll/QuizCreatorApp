@@ -1,4 +1,4 @@
-package sahak.sahakyan.quizcreatorapp.presentation.profile
+package sahak.sahakyan.quizcreatorapp.ui
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -14,7 +14,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
-import sahak.sahakyan.quizcreatorapp.presentation.sign_in.UserData
+import sahak.sahakyan.quizcreatorapp.sign_in.UserData
 
 @Composable
 fun ProfileScreen(

@@ -1,4 +1,4 @@
-package sahak.sahakyan.quizcreatorapp.presentation.sign_in
+package sahak.sahakyan.quizcreatorapp.sign_in
 
 data class SignInResult(
     val data: UserData?,
@@ -8,5 +8,6 @@ data class SignInResult(
 data class UserData(
     val userId: String,
     val username: String?,
+    val email: String? = null,
     val profilePictureUrl: String?
 )

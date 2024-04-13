@@ -10,25 +10,29 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.navigation
 import androidx.navigation.compose.rememberNavController
 import com.google.android.gms.auth.api.identity.Identity
+import com.google.firebase.FirebaseApp
 import kotlinx.coroutines.launch
-import sahak.sahakyan.quizcreatorapp.presentation.profile.ProfileScreen
-import sahak.sahakyan.quizcreatorapp.presentation.sign_in.GoogleAuthUiClient
-import sahak.sahakyan.quizcreatorapp.presentation.sign_in.SignInScreen
-import sahak.sahakyan.quizcreatorapp.presentation.sign_in.SignInViewModel
+import sahak.sahakyan.quizcreatorapp.repository.UserRepository
+import sahak.sahakyan.quizcreatorapp.navigation.BottomBar
+import sahak.sahakyan.quizcreatorapp.navigation.NavigationScreens
+import sahak.sahakyan.quizcreatorapp.ui.HomeScreen
+import sahak.sahakyan.quizcreatorapp.ui.ProfileScreen
+import sahak.sahakyan.quizcreatorapp.sign_in.GoogleAuthUiClient
+import sahak.sahakyan.quizcreatorapp.sign_in.SignInScreen
+import sahak.sahakyan.quizcreatorapp.ui.QuizCreatorScreen
+import sahak.sahakyan.quizcreatorapp.viewmodel.SignInViewModel
 import sahak.sahakyan.quizcreatorapp.ui.theme.QuizCreatorAppTheme
-import kotlin.math.sign
 
 class MainActivity : ComponentActivity() {
 
@@ -38,9 +42,18 @@ class MainActivity : ComponentActivity() {
             oneTapClient = Identity.getSignInClient(applicationContext)
         )
     }
+    private val userRepo: UserRepository = UserRepository()
+
+
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
+
         super.onCreate(savedInstanceState)
+        FirebaseApp.initializeApp(this)
+
+
+
         setContent {
             QuizCreatorAppTheme {
                 Surface(
@@ -48,14 +61,14 @@ class MainActivity : ComponentActivity() {
                     color = MaterialTheme.colorScheme.background
                 ) {
                     val navController = rememberNavController()
-                    NavHost(navController = navController, startDestination = "sign_in") {
-                        composable("sign_in") {
+                    NavHost(navController = navController, startDestination = NavigationScreens.SignIn.route) {
+                        composable(NavigationScreens.SignIn.route) {
                             val viewModel = viewModel<SignInViewModel>()
                             val state by viewModel.state.collectAsStateWithLifecycle()
 
                             LaunchedEffect(key1 = Unit) {
                                 if(googleAuthUiClient.getSignedInUser() != null) {
-                                    navController.navigate("profile")
+                                    navController.navigate(BottomBar.Home.route)
                                 }
                             }
 
@@ -81,7 +94,10 @@ class MainActivity : ComponentActivity() {
                                         Toast.LENGTH_LONG
                                     ).show()
 
-                                    navController.navigate("profile")
+
+                                    userRepo.createUser()
+
+                                    navController.navigate(BottomBar.Home.route)
                                     viewModel.resetState()
                                 }
                             }
@@ -100,7 +116,15 @@ class MainActivity : ComponentActivity() {
                                 }
                             )
                         }
-                        composable("profile") {
+                        composable(BottomBar.Home.route) {
+                            HomeScreen(
+                                navController = navController,
+                                onAddClick = {
+                                    navController.navigate(NavigationScreens.QuizCreator.route)
+                                }
+                            )
+                        }
+                        composable(BottomBar.Profile.route) {
                             ProfileScreen(
                                 userData = googleAuthUiClient.getSignedInUser(),
                                 onSignOut = {
@@ -111,11 +135,13 @@ class MainActivity : ComponentActivity() {
                                             "Signed out",
                                             Toast.LENGTH_LONG
                                         ).show()
-
-                                        navController.popBackStack()
+                                        navController.navigate(NavigationScreens.SignIn.route)
                                     }
                                 }
                             )
+                        }
+                        composable(NavigationScreens.QuizCreator.route) {
+                            QuizCreatorScreen()
                         }
                     }
                 }
