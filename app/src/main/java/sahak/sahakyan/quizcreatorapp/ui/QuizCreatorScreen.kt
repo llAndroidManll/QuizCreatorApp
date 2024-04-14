@@ -5,7 +5,6 @@ package sahak.sahakyan.quizcreatorapp.ui
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,11 +13,8 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -44,20 +40,28 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import sahak.sahakyan.quizcreatorapp.entity.Question
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun QuizCreatorScreen() {
+fun QuizCreatorScreen(
+    quizId: String = "",
+    onPreviousClick: () -> Unit = {},
+    onNextClick: () -> Unit = {},
+    onFinishClick: () -> Unit = {},
+) {
 
-    val question = remember { mutableStateOf("") }
+    val question: Question = Question(
+        id = quizId,
+    )
+    question.answers = ArrayList<String>()
     var answer1 = ""
     var answer2 = ""
     var answer3 = ""
     var answer4 = ""
-    var correctAnswer = 0
+
 
     Box(modifier = Modifier.fillMaxSize()) {
         Image(
@@ -73,35 +77,14 @@ fun QuizCreatorScreen() {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.SpaceBetween
         ) {
-            Column(
-                modifier = Modifier,
-            ) {
-                OutlinedTextField(
-                    value = question.value,
-                    onValueChange = { question.value = it },
-                    modifier = Modifier.fillMaxWidth(),
-                    textStyle = TextStyle(
-                        color = Color.White,
-                        fontSize = 20.sp,
-                    ),
-                    placeholder = {
-                        Text(
-                            text = "Enter your question here",
-                            color = Color.White,
-                        )
-                    },
-                    colors = TextFieldDefaults.outlinedTextFieldColors(
-                        unfocusedBorderColor = Color.Transparent,
-                        focusedBorderColor = Color.Transparent,
-                    ),
-                )
-                Spacer(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(1.dp)
-                        .background(Color.White)
-                )
-            }
+
+
+            OutlinedTextField(
+                value = question.question,
+                onValueChange = { question.question = it },
+                placeHolder = "Enter your question here",
+            )
+
             ImagePicker()
 
             Column(
@@ -109,10 +92,22 @@ fun QuizCreatorScreen() {
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                ItemInColumn()
-                ItemInColumn()
-                ItemInColumn()
-                ItemInColumn()
+                ItemInColumn(
+                    value = answer1,
+                    onValueChange = { answer1 = it },
+                )
+                ItemInColumn(
+                    value = answer2,
+                    onValueChange = { answer2= it },
+                )
+                ItemInColumn(
+                    value = answer3,
+                    onValueChange = { answer3 = it },
+                )
+                ItemInColumn(
+                    value = answer4,
+                    onValueChange = { answer4 = it },
+                )
             }
 
             Row(
@@ -124,10 +119,12 @@ fun QuizCreatorScreen() {
             ) {
                 ButtonStyle(
                     text = "Previous Question",
+                    onClick = onPreviousClick,
                     modifier = Modifier.height(50.dp)
                 )
                 ButtonStyle(
                     text = "Next Question",
+                    onClick = onNextClick,
                     modifier = Modifier.height(50.dp)
                 )
             }
@@ -135,8 +132,12 @@ fun QuizCreatorScreen() {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ItemInColumn() {
+fun ItemInColumn(
+    value: String = "",
+    onValueChange: (String) -> Unit,
+) {
     Card(
         modifier = Modifier.padding(vertical = 10.dp),
         colors = CardDefaults.cardColors(
@@ -183,9 +184,6 @@ fun ItemInColumn() {
     }
 }
 
-
-
-
 @Composable
 fun SwitchWithCustomColors() {
     var checked by remember { mutableStateOf(true) }
@@ -208,10 +206,11 @@ fun SwitchWithCustomColors() {
 @Composable
 fun ButtonStyle(
     text: String,
+    onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Button(
-        onClick = { },
+        onClick = onClick,
         modifier = modifier,
         shape = RoundedCornerShape(10),
         border = BorderStroke(1.dp, Color.LightGray),
@@ -228,4 +227,47 @@ fun ButtonStyle(
 @Composable
 fun QuizCreatorScreenPreview() {
     QuizCreatorScreen()
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun OutlinedTextField(
+    columnModifier: Modifier = Modifier,
+    value: String = "",
+    onValueChange: (String) -> Unit = {},
+    placeHolder: String = "",
+    textStyle: TextStyle = TextStyle(
+        color = Color.White,
+        fontSize = 20.sp,
+    ),
+    textFieldModifier: Modifier = Modifier.fillMaxWidth(),
+    spacerModifier: Modifier = Modifier
+        .fillMaxWidth()
+        .height(1.dp)
+        .background(Color.White),
+) {
+    Column(
+        modifier = columnModifier,
+    ) {
+        OutlinedTextField(
+            value = value,
+            onValueChange = onValueChange,
+            modifier = textFieldModifier,
+            textStyle = textStyle,
+            placeholder = {
+                Text(
+                    text = placeHolder,
+                    color = Color.White,
+                )
+            },
+            colors = TextFieldDefaults.outlinedTextFieldColors(
+                unfocusedBorderColor = Color.Transparent,
+                focusedBorderColor = Color.Transparent,
+            ),
+
+        )
+        Spacer(
+            modifier = spacerModifier
+        )
+    }
 }

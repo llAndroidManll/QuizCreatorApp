@@ -14,8 +14,8 @@ data class Quiz (
 )
 data class Question(
     val id: String,
-    val question: String,
-    val image: String? = null,
-    val answers: List<String>,
-    val correctAnswer: Int,
+    var question: String = "",
+    var image: String? = null,
+    var answers: List<String> = emptyList(),
+    var correctAnswer: Int = 0,
 )

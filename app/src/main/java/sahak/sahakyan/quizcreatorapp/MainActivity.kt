@@ -23,13 +23,18 @@ import androidx.navigation.compose.rememberNavController
 import com.google.android.gms.auth.api.identity.Identity
 import com.google.firebase.FirebaseApp
 import kotlinx.coroutines.launch
+import okhttp3.internal.immutableListOf
+import sahak.sahakyan.quizcreatorapp.entity.Question
+import sahak.sahakyan.quizcreatorapp.entity.Quiz
 import sahak.sahakyan.quizcreatorapp.repository.UserRepository
 import sahak.sahakyan.quizcreatorapp.navigation.BottomBar
 import sahak.sahakyan.quizcreatorapp.navigation.NavigationScreens
+import sahak.sahakyan.quizcreatorapp.repository.QuizRepository
 import sahak.sahakyan.quizcreatorapp.ui.HomeScreen
 import sahak.sahakyan.quizcreatorapp.ui.ProfileScreen
 import sahak.sahakyan.quizcreatorapp.sign_in.GoogleAuthUiClient
 import sahak.sahakyan.quizcreatorapp.sign_in.SignInScreen
+import sahak.sahakyan.quizcreatorapp.ui.CreateQuizScreen
 import sahak.sahakyan.quizcreatorapp.ui.QuizCreatorScreen
 import sahak.sahakyan.quizcreatorapp.viewmodel.SignInViewModel
 import sahak.sahakyan.quizcreatorapp.ui.theme.QuizCreatorAppTheme
@@ -43,6 +48,7 @@ class MainActivity : ComponentActivity() {
         )
     }
     private val userRepo: UserRepository = UserRepository()
+    private val quizRepo: QuizRepository = QuizRepository()
 
 
 
@@ -120,7 +126,8 @@ class MainActivity : ComponentActivity() {
                             HomeScreen(
                                 navController = navController,
                                 onAddClick = {
-                                    navController.navigate(NavigationScreens.QuizCreator.route)
+
+                                    navController.navigate(NavigationScreens.CreateQuiz.route)
                                 }
                             )
                         }
@@ -140,8 +147,22 @@ class MainActivity : ComponentActivity() {
                                 }
                             )
                         }
-                        composable(NavigationScreens.QuizCreator.route) {
-                            QuizCreatorScreen()
+                        composable(NavigationScreens.QuizCreator.route + "/{quizId}") { backStackEntry ->
+                            val quizId = backStackEntry.arguments?.getString("quizId") ?: ""
+                            QuizCreatorScreen(quizId = quizId)
+                        }
+                        composable(NavigationScreens.CreateQuiz.route) {
+                            CreateQuizScreen(
+                                onNextStepClick = { title, description ->
+                                    val quizId = quizRepo.generateId()
+                                    val quiz = Quiz(id = quizId, title = title, description = description, questions = mutableListOf<Question>())
+                                    lifecycleScope.launch {
+                                        quizRepo.saveQuiz(quiz = quiz)
+                                    }
+                                    navController.navigate(NavigationScreens.QuizCreator.route + "/$quizId")
+                                },
+                            )
+
                         }
                     }
                 }

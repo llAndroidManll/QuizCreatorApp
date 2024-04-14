@@ -9,4 +9,7 @@ sealed class  NavigationScreens(
     data object QuizCreator: NavigationScreens(
         route = "quiz_creator"
     )
+    data object CreateQuiz: NavigationScreens(
+        route = "create_quiz"
+    )
 }
