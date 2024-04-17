@@ -2,7 +2,7 @@
 
 package sahak.sahakyan.quizcreatorapp.ui
 
-import android.net.Uri
+import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -25,10 +25,9 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Switch
-import androidx.compose.material3.SwitchDefaults
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.RadioButtonDefaults
+import androidx.compose.material3.Snackbar
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
@@ -40,12 +39,11 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import sahak.sahakyan.quizcreatorapp.R
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import sahak.sahakyan.quizcreatorapp.entity.Question
 
@@ -58,22 +56,42 @@ fun QuizCreatorScreen(
     onFinishClick: () -> Unit = {},
 ) {
 
-    val question: Question = Question(
-        id = "0",
-    )
+    var questionCount: Int by remember { mutableIntStateOf(1) }
 
-    var answer1 = ""
-    var answer2 = ""
-    var answer3 = ""
-    var answer4 = ""
+    val question: Question = remember {
+        Question(
+            id = questionCount,
+        )
+    }
 
+    var questionValue by remember {
+        mutableStateOf<String>(question.question)
+    }
     var selectedImageCoin by remember {
-        mutableStateOf<String?>(null)
+        mutableStateOf<String>("")
     }
     val singlePhotoPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia(),
         onResult = { uri -> selectedImageCoin = uri.toString() }
     )
+
+
+    var answer1 by remember {
+        mutableStateOf<String>("")
+    }
+    var answer2 by remember {
+        mutableStateOf<String>("")
+    }
+    var answer3 by remember {
+        mutableStateOf<String>("")
+    }
+    var answer4 by remember {
+        mutableStateOf<String>("")
+    }
+    var selectedOption by remember { mutableStateOf("1") }
+
+    val context = LocalContext.current
+    val snackBarVisibleState = remember { mutableStateOf(false) }
 
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -90,14 +108,11 @@ fun QuizCreatorScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.SpaceBetween
         ) {
-
-
             OutlinedTextField(
-                value = question.question,
-                onValueChange = { question.question = it },
+                value = questionValue,
+                onValueChange = { questionValue = it },
                 placeHolder = "Enter your question here",
             )
-
             // Image Picker
             Column(
                 modifier = Modifier
@@ -106,15 +121,7 @@ fun QuizCreatorScreen(
                     .height(200.dp)
                     .background(Color.Transparent),
             ) {
-
-                if (selectedImageCoin != null) {
-                    AsyncImage(
-                        model = selectedImageCoin!!,
-                        contentDescription = null,
-                        modifier = Modifier.fillMaxWidth(),
-                        contentScale = ContentScale.Fit
-                    )
-                } else {
+                if (selectedImageCoin.isEmpty() || selectedImageCoin == "null") {
                     Button(
                         onClick = {
                             singlePhotoPickerLauncher.launch(
@@ -135,48 +142,84 @@ fun QuizCreatorScreen(
                         Text(text = "Pick Image")
                     }
                     Spacer(modifier = Modifier.height(16.dp))
+                } else {
+                    Log.i("ImagePicker","selected img url -- $selectedImageCoin")
+                    AsyncImage(
+                        model = selectedImageCoin,
+                        contentDescription = null,
+                        modifier = Modifier.fillMaxWidth(),
+                        contentScale = ContentScale.Fit
+                    )
                 }
             }
 
+
+
+            // Items
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 ItemInColumn(
-                    value = answer1,
-                    onValueChange = { answer1 = it },
-                    isCorrectAnswer = question.correctAnswer == 0,
-                    isCorrect = {
-                        question.correctAnswer = 0
+                    selected = selectedOption == answer1,
+                    onClick = {
+                        if (answer1 == "") {
+                            snackBarVisibleState.value = true
+                        } else{
+                            selectedOption = answer1
+                        }
+                    },
+                    answer = answer1,
+                    onAnswerChange = {
+                        answer1 = it
                     }
                 )
                 ItemInColumn(
-                    value = answer2,
-                    onValueChange = { answer2= it },
-                    isCorrectAnswer = question.correctAnswer == 1,
-                    isCorrect = {
-                        question.correctAnswer = 1
+                    selected = selectedOption == answer2,
+                    onClick = {
+                        selectedOption = answer2
+                    },
+                    answer = answer2,
+                    onAnswerChange = {
+                        answer2 = it
                     }
                 )
                 ItemInColumn(
-                    value = answer3,
-                    onValueChange = { answer3 = it },
-                    isCorrectAnswer = question.correctAnswer == 2,
-                    isCorrect = {
-                        question.correctAnswer = 2
+                    selected = selectedOption == answer3,
+                    onClick = {
+                        selectedOption = answer3
+                    },
+                    answer = answer3,
+                    onAnswerChange = {
+                        answer3 = it
                     }
                 )
                 ItemInColumn(
-                    value = answer4,
-                    onValueChange = { answer4 = it },
-                    isCorrectAnswer = question.correctAnswer == 3,
-                    isCorrect = {
-                        question.correctAnswer = 3
+                    selected = selectedOption == answer4,
+                    onClick = {
+                        selectedOption = answer4
+                    },
+                    answer = answer4,
+                    onAnswerChange = {
+                        answer4 = it
                     }
                 )
+                if (snackBarVisibleState.value) {
+                    Snackbar(
+                        action = {
+                            Button(onClick = { snackBarVisibleState.value = false }) {
+                                Text(text = "Dismiss")
+                            }
+                        },
+                        modifier = Modifier.padding(16.dp)
+                    ) {
+                        Text(text = "You need to enter Text")
+                    }
+                }
             }
 
+            // Buttons
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -186,15 +229,20 @@ fun QuizCreatorScreen(
             ) {
                 ButtonStyle(
                     text = "Previous Question",
-                    onClick = onPreviousClick,
+                    onClick = {
+                        questionCount--
+                        onPreviousClick()
+                    },
                     modifier = Modifier.height(50.dp)
                 )
                 ButtonStyle(
                     text = "Next Question",
                     onClick = {
-                        question.answers = listOf(answer1, answer2, answer3, answer4)
-                        selectedImageCoin.toString().also { question.image = it }
-
+                        question.answers = mutableListOf(answer1,answer2,answer3,answer4)
+                        question.image = selectedImageCoin
+                        questionCount++
+                        question.question = questionValue
+                        question.correctAnswer = question.answers.indexOf(selectedOption)
                         onNextClick(question)
                     },
                     modifier = Modifier.height(50.dp)
@@ -204,14 +252,12 @@ fun QuizCreatorScreen(
     }
 }
 
-
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ItemInColumn(
-    value: String = "",
-    onValueChange: (String) -> Unit,
-    isCorrectAnswer: Boolean,
-    isCorrect: ()->Unit = {}
+    selected: Boolean = false,
+    onClick: () -> Unit = {},
+    answer: String,
+    onAnswerChange: (String) -> Unit = {},
 ) {
     Card(
         modifier = Modifier.padding(vertical = 10.dp),
@@ -221,89 +267,32 @@ fun ItemInColumn(
             disabledContainerColor = Color.Gray,
             disabledContentColor = Color.DarkGray
         ),
-        border = BorderStroke(1.dp,Color.White),
+        border = BorderStroke(1.dp, Color.White),
     ) {
         Row(
-            modifier = Modifier.padding(end = 10.dp),
+            modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
             OutlinedTextField(
-                value = value,
-                onValueChange = onValueChange,
-                modifier = Modifier.width(250.dp),
-                textStyle = TextStyle(
-                    color = Color.White,
-                    fontSize = 14.sp,
-                ),
-                placeholder = {
-                    Text(
-                        text = "Enter your answer here",
-                        color = Color.White,
-                        style = TextStyle(
-                            color = Color.White,
-                            fontSize = 14.sp,
-                        ),
-                        modifier = Modifier
-                    )
-                },
-                colors = TextFieldDefaults.outlinedTextFieldColors(
-                    unfocusedBorderColor = Color.Transparent,
-                    focusedBorderColor = Color.Transparent,
-                ),
-                maxLines = 4,
+                value = answer,
+                onValueChange = onAnswerChange,
+                placeHolder = "Enter your answer here",
+                columnModifier = Modifier.width(300.dp)
             )
-
-            SwitchWithCustomColors(
-                isCorrectAnswer = isCorrectAnswer,
-                onToggle = { isChecked ->
-                    if (isChecked) isCorrect()
-                }
+            RadioButton(
+                selected = selected,
+                onClick = onClick,
+                modifier = Modifier.fillMaxWidth(),
+                colors = RadioButtonDefaults.colors(
+                    selectedColor = Color.White, // Color when the RadioButton is selected
+                    unselectedColor = Color.Gray, // Color when the RadioButton is not selected
+                )
             )
         }
     }
 }
-@Composable
-fun SwitchWithCustomColors(
-    isCorrectAnswer: Boolean,
-    onToggle: (Boolean) -> Unit
-) {
-    var checked by remember { mutableStateOf(false) }
 
-    Switch(
-        checked = checked,
-        onCheckedChange = { isChecked ->
-            checked = isChecked
-            onToggle(isChecked)
-        },
-        colors = SwitchDefaults.colors(
-            checkedThumbColor = if (isCorrectAnswer) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary,
-            checkedTrackColor = if (isCorrectAnswer) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.secondaryContainer,
-            uncheckedThumbColor = if (isCorrectAnswer) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary,
-            uncheckedTrackColor = if (isCorrectAnswer) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.secondaryContainer,
-        )
-    )
-}
-
-@Composable
-fun ButtonStyle(
-    text: String,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Button(
-        onClick = onClick,
-        modifier = modifier,
-        shape = RoundedCornerShape(10),
-        border = BorderStroke(1.dp, Color.LightGray),
-        colors = ButtonDefaults.buttonColors(
-            contentColor = Color.White,
-            containerColor = Color.Transparent
-        ),
-    ) {
-        Text(text = text)
-    }
-}
 
 @Preview(showBackground = true)
 @Composable
@@ -311,45 +300,3 @@ fun QuizCreatorScreenPreview() {
     QuizCreatorScreen()
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun OutlinedTextField(
-    columnModifier: Modifier = Modifier,
-    value: String = "",
-    onValueChange: (String) -> Unit = {},
-    placeHolder: String = "",
-    textStyle: TextStyle = TextStyle(
-        color = Color.White,
-        fontSize = 20.sp,
-    ),
-    textFieldModifier: Modifier = Modifier.fillMaxWidth(),
-    spacerModifier: Modifier = Modifier
-        .fillMaxWidth()
-        .height(1.dp)
-        .background(Color.White),
-) {
-    Column(
-        modifier = columnModifier,
-    ) {
-        OutlinedTextField(
-            value = value,
-            onValueChange = onValueChange,
-            modifier = textFieldModifier,
-            textStyle = textStyle,
-            placeholder = {
-                Text(
-                    text = placeHolder,
-                    color = Color.White,
-                )
-            },
-            colors = TextFieldDefaults.outlinedTextFieldColors(
-                unfocusedBorderColor = Color.Transparent,
-                focusedBorderColor = Color.Transparent,
-            ),
-
-        )
-        Spacer(
-            modifier = spacerModifier
-        )
-    }
-}

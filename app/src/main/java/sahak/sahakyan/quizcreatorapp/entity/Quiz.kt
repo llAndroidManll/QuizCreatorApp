@@ -10,12 +10,12 @@ data class Quiz (
     val id: String,
     val title: String,
     val description: String,
-    val questions: List<Question>,
+    val questions: ArrayList<Question>,
 )
 data class Question(
-    val id: String,
+    val id: Int,
     var question: String = "",
     var image: String? = null,
-    var answers: List<String> = emptyList(),
+    var answers: MutableList<String> = ArrayList(),
     var correctAnswer: Int = 0,
 )

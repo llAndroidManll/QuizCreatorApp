@@ -149,13 +149,24 @@ class MainActivity : ComponentActivity() {
                         }
                         composable(NavigationScreens.QuizCreator.route + "/{quizId}") { backStackEntry ->
                             val quizId = backStackEntry.arguments?.getString("quizId") ?: ""
-                            QuizCreatorScreen(quizId = quizId)
+                            QuizCreatorScreen(
+                                quizId = quizId,
+                                onNextClick = {question ->
+                                    lifecycleScope.launch {
+                                        quizRepo.addQuestion(
+                                            question = question,
+                                            quizId = quizId
+                                        )
+                                    }
+                                    // TODO: When we have saved the question, refresh screen and set default values
+                                }
+                            )
                         }
                         composable(NavigationScreens.CreateQuiz.route) {
                             CreateQuizScreen(
                                 onNextStepClick = { title, description ->
                                     val quizId = quizRepo.generateId()
-                                    val quiz = Quiz(id = quizId, title = title, description = description, questions = mutableListOf<Question>())
+                                    val quiz = Quiz(id = quizId, title = title, description = description, ArrayList<Question>())
                                     lifecycleScope.launch {
                                         quizRepo.saveQuiz(quiz = quiz)
                                     }
