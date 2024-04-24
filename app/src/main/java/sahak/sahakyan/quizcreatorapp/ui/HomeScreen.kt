@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -28,10 +29,13 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import sahak.sahakyan.quizcreatorapp.R
+import sahak.sahakyan.quizcreatorapp.entity.Quizzes
+import sahak.sahakyan.quizcreatorapp.navigation.NavigationScreens
 
 @Composable
 fun HomeScreen(
     navController: NavHostController,
+    quizData: Quizzes = Quizzes("", emptyList()),
     onAddClick: ()->Unit = {}
 ) {
     Box(modifier = Modifier.fillMaxSize()) {
@@ -73,6 +77,17 @@ fun HomeScreen(
                         bottom = 16.dp
                     ),
                 ) {
+                    items(quizData.quizzes.size) { index ->
+                        ItemBox(
+                            title = quizData.quizzes[index].title,
+                            onClick = {
+
+                                navController.navigate(NavigationScreens.QuizCreator.route + "/${quizData.quizzes[index].id}")
+
+                                // TODO -- OPEN THAT QUIZ
+                            }
+                        )
+                    }
 
                 }
             }

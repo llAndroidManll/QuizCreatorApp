@@ -40,35 +40,45 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import sahak.sahakyan.quizcreatorapp.R
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import sahak.sahakyan.quizcreatorapp.entity.Question
+import sahak.sahakyan.quizcreatorapp.viewmodel.QuizViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
+@Preview(showBackground = true)
 @Composable
 fun QuizCreatorScreen(
-    quizId: String = "",
-    onPreviousClick: () -> Unit = {},
+    viewModel: QuizViewModel,
+    onPreviousClick: () -> Unit,
     onNextClick: (Question) -> Unit = {},
     onFinishClick: () -> Unit = {},
 ) {
 
-    var questionCount: Int by remember { mutableIntStateOf(1) }
 
-    val question: Question = remember {
-        Question(
-            id = questionCount,
-        )
+    if (viewModel.onPreviousStateChange.value) {
+        Log.d("Quiz", "QuizCreatorScreen onPreviousStateChange value is ${viewModel.currentQuestion.value}")
     }
+
+
+    val questionCount by viewModel.questionCount
+
 
     var questionValue by remember {
-        mutableStateOf<String>(question.question)
+        mutableStateOf<String>(
+            viewModel.currentQuestion.value
+                .question
+        )
     }
     var selectedImageCoin by remember {
-        mutableStateOf<String>("")
+        mutableStateOf<String?>(
+            if (viewModel.currentQuestion.value
+                    .image != null
+            ) viewModel.currentQuestion.value
+                .image else ""
+        )
     }
     val singlePhotoPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia(),
@@ -77,18 +87,47 @@ fun QuizCreatorScreen(
 
 
     var answer1 by remember {
-        mutableStateOf<String>("")
+        mutableStateOf<String>(
+            setAnswers(
+                viewModel.currentQuestion.value
+                    .answers, 0
+            )
+        )
     }
     var answer2 by remember {
-        mutableStateOf<String>("")
+        mutableStateOf<String>(
+            setAnswers(
+                viewModel.currentQuestion.value
+                    .answers, 1
+            )
+        )
     }
     var answer3 by remember {
-        mutableStateOf<String>("")
+        mutableStateOf<String>(
+            setAnswers(
+                viewModel.currentQuestion.value
+                    .answers, 2
+            )
+        )
     }
     var answer4 by remember {
-        mutableStateOf<String>("")
+        mutableStateOf<String>(
+            setAnswers(
+                viewModel.currentQuestion.value
+                    .answers, 3
+            )
+        )
     }
-    var selectedOption by remember { mutableStateOf("1") }
+    var selectedOption by remember {
+        mutableStateOf(
+            if (viewModel.currentQuestion.value
+                    .answers.isEmpty()
+            ) "" else
+                viewModel.currentQuestion.value
+                    .answers[viewModel.currentQuestion.value
+                    .correctAnswer]
+        )
+    }
 
     val context = LocalContext.current
     val snackBarVisibleState = remember { mutableStateOf(false) }
@@ -121,7 +160,7 @@ fun QuizCreatorScreen(
                     .height(200.dp)
                     .background(Color.Transparent),
             ) {
-                if (selectedImageCoin.isEmpty() || selectedImageCoin == "null") {
+                if (selectedImageCoin!!.isEmpty() || selectedImageCoin == "null") {
                     Button(
                         onClick = {
                             singlePhotoPickerLauncher.launch(
@@ -143,7 +182,7 @@ fun QuizCreatorScreen(
                     }
                     Spacer(modifier = Modifier.height(16.dp))
                 } else {
-                    Log.i("ImagePicker","selected img url -- $selectedImageCoin")
+                    Log.i("ImagePicker", "selected img url -- $selectedImageCoin")
                     AsyncImage(
                         model = selectedImageCoin,
                         contentDescription = null,
@@ -152,8 +191,6 @@ fun QuizCreatorScreen(
                     )
                 }
             }
-
-
 
             // Items
             Column(
@@ -166,7 +203,7 @@ fun QuizCreatorScreen(
                     onClick = {
                         if (answer1 == "") {
                             snackBarVisibleState.value = true
-                        } else{
+                        } else {
                             selectedOption = answer1
                         }
                     },
@@ -227,26 +264,55 @@ fun QuizCreatorScreen(
                 horizontalArrangement = Arrangement.SpaceEvenly,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                ButtonStyle(
-                    text = "Previous Question",
-                    onClick = {
-                        questionCount--
-                        onPreviousClick()
-                    },
-                    modifier = Modifier.height(50.dp)
-                )
-                ButtonStyle(
-                    text = "Next Question",
-                    onClick = {
-                        question.answers = mutableListOf(answer1,answer2,answer3,answer4)
-                        question.image = selectedImageCoin
-                        questionCount++
-                        question.question = questionValue
-                        question.correctAnswer = question.answers.indexOf(selectedOption)
-                        onNextClick(question)
-                    },
-                    modifier = Modifier.height(50.dp)
-                )
+                if (questionCount > 0) {
+                    ButtonStyle(
+                        text = "Previous Question",
+                        onClick = {
+                            viewModel.decrementQuestionCount()
+                            onPreviousClick()
+                        },
+                        modifier = Modifier.height(50.dp)
+                    )
+                }
+                if (questionCount < 20) {
+                    ButtonStyle(
+                        text = "Next Question",
+                        onClick = {
+                            viewModel.currentQuestion.value
+                                .answers = mutableListOf(answer1, answer2, answer3, answer4)
+                            viewModel.currentQuestion.value
+                                .image = selectedImageCoin
+                            viewModel.incrementQuestionCount()
+                            viewModel.currentQuestion.value
+                                .question = questionValue
+                            viewModel.currentQuestion.value
+                                .correctAnswer = viewModel.currentQuestion.value
+                                .answers.indexOf(selectedOption)
+
+                            Log.i(
+                                "Quiz",
+                                "QuizCreatorScreen Next Question onClick():  questionCount = $questionCount"
+                            )
+
+
+
+                            onNextClick(
+                                viewModel.currentQuestion.value
+                            )
+                        },
+                        modifier = Modifier.height(50.dp)
+                    )
+
+                } else {
+                    ButtonStyle(
+                        text = "Finish",
+                        onClick = {
+                            onFinishClick()
+                        },
+                        modifier = Modifier.height(50.dp)
+                    )
+                }
+
             }
         }
     }
@@ -293,10 +359,10 @@ fun ItemInColumn(
     }
 }
 
-
-@Preview(showBackground = true)
-@Composable
-fun QuizCreatorScreenPreview() {
-    QuizCreatorScreen()
+fun setAnswers(list: List<String>, index: Int): String {
+    return if (list.isEmpty()) {
+        ""
+    } else {
+        list[index]
+    }
 }
-
