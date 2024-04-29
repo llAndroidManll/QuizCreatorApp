@@ -20,7 +20,6 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import androidx.navigation.compose.navigation
 import androidx.navigation.compose.rememberNavController
 import com.google.android.gms.auth.api.identity.Identity
 import com.google.firebase.FirebaseApp
@@ -30,15 +29,15 @@ import sahak.sahakyan.quizcreatorapp.entity.Quiz
 import sahak.sahakyan.quizcreatorapp.entity.Quizzes
 import sahak.sahakyan.quizcreatorapp.navigation.BottomBar
 import sahak.sahakyan.quizcreatorapp.navigation.NavigationScreens
-import sahak.sahakyan.quizcreatorapp.ui.HomeScreen
-import sahak.sahakyan.quizcreatorapp.ui.ProfileScreen
 import sahak.sahakyan.quizcreatorapp.sign_in.GoogleAuthUiClient
 import sahak.sahakyan.quizcreatorapp.sign_in.SignInScreen
 import sahak.sahakyan.quizcreatorapp.ui.CreateQuizScreen
+import sahak.sahakyan.quizcreatorapp.ui.HomeScreen
+import sahak.sahakyan.quizcreatorapp.ui.ProfileScreen
 import sahak.sahakyan.quizcreatorapp.ui.QuizCreatorScreen
-import sahak.sahakyan.quizcreatorapp.viewmodel.SignInViewModel
 import sahak.sahakyan.quizcreatorapp.ui.theme.QuizCreatorAppTheme
 import sahak.sahakyan.quizcreatorapp.viewmodel.QuizViewModel
+import sahak.sahakyan.quizcreatorapp.viewmodel.SignInViewModel
 import sahak.sahakyan.quizcreatorapp.viewmodel.UserViewModel
 
 class MainActivity : ComponentActivity() {
@@ -166,37 +165,33 @@ class MainActivity : ComponentActivity() {
                         composable(NavigationScreens.QuizCreator.route + "/{quizId}") { backStackEntry ->
                             val quizId = backStackEntry.arguments?.getString("quizId") ?: ""
 
-                            var questionsListSize = 0
 
-
-                            Log.i("Quiz", "NavigationScreens.QuizCreator.route quizViewModel.currentQuestion.value First state : ${quizViewModel.currentQuestion.value}")
+                            Log.d("Quiz--MainActivity", "QuestionsListSize is: ${quizViewModel.questionsSize.value}")
+                            Log.d("Quiz--MainActivity", "QuestionCount is: ${quizViewModel.questionCount.value}")
+                            if (quizViewModel.questionsSize.value == quizViewModel.questionCount.value) {
+                                Log.d("Quiz--MainActivity","setting OnPreviousState to false")
+                                quizViewModel.setOnPreviousStateChange(false)
+                            }
 
                             QuizCreatorScreen(
                                 viewModel = quizViewModel,
-
                                 onNextClick = { question ->
-                                    Log.i("Quiz", "")
-                                    Log.i("Quiz", "NavigationScreens.QuizCreator.route onNextClick: ${quizViewModel.onPreviousStateChange.value}")
+                                    Log.d("Quiz--MainActivity", "quizViewModel.onPreviousStateChange.value is: ${quizViewModel.onPreviousStateChange.value}")
                                     if(quizViewModel.onPreviousStateChange.value) {
+                                        Log.d("Quiz--MainActivity", "quizViewModel.onPreviousStateChange.value is: true")
                                         lifecycleScope.launch {
                                             quizViewModel.updateQuestion(
                                                 question = question,
                                                 quizId = quizId,
                                                 questionId = quizViewModel.questionCount.value
                                             )
-
-                                            quizViewModel.setCurrentQuestion(quizViewModel.getQuestion(quizId, quizViewModel.questionCount.value +1)!!)
-
-                                            questionsListSize = quizViewModel.getQuestionsListSize(quizId)
-                                            Log.i("Quiz", "NavigationScreens.QuizCreator.route onNextClick current Question: ${quizViewModel.currentQuestion.value}")
-                                            Log.i("Quiz", "NavigationScreens.QuizCreator.route onNextClick Question List Size: $questionsListSize")
-                                        }
-
-                                        if (questionsListSize == quizViewModel.questionCount.value + 1) {
-                                            quizViewModel.setOnPreviousStateChange(false)
-                                            Log.i("Quiz", "NavigationScreens.QuizCreator.route onNextClick if(questionsListSize == ...): ${quizViewModel.onPreviousStateChange.value}")
+                                            Log.d("Quiz--MainActivity", "Question before nullableQuestion is : ${quizViewModel.currentQuestion.value}")
+                                            val nullableQuestion: Question = quizViewModel.getQuestion(quizId, quizViewModel.questionCount.value)!!
+                                            Log.d("Quiz--MainActivity", "Question after nullableQuestion is : ${quizViewModel.currentQuestion.value}")
+                                            quizViewModel.setCurrentQuestion(nullableQuestion)
                                         }
                                     } else {
+                                        Log.d("Quiz--MainActivity", "quizViewModel.onPreviousStateChange.value is: false")
                                         question.id = quizViewModel.questionCount.value
                                         lifecycleScope.launch {
                                             quizViewModel.addQuestion(
@@ -206,19 +201,18 @@ class MainActivity : ComponentActivity() {
                                         }
                                         quizViewModel.setCurrentQuestion(Question())
                                     }
-                                    Log.i("Quiz", "NavigationScreens.QuizCreator.route quizViewModel.currentQuestion.value onNextClick : ${quizViewModel.currentQuestion.value}")
+                                    Log.i("Quiz--MainActivity", "Navigating to destination ID: NavigationScreens.QuizCreator.route")
                                     navController.navigate(NavigationScreens.QuizCreator.route + "/$quizId")
                                 },
                                 onPreviousClick = {
+                                    quizViewModel.setOnPreviousStateChange(true)
                                     lifecycleScope.launch {
                                         quizViewModel.getQuestion(
                                             quizId = quizId,
                                             questionId = quizViewModel.questionCount.value
                                         )
                                     }
-                                    quizViewModel.setOnPreviousStateChange(true)
                                     navController.navigate(NavigationScreens.QuizCreator.route + "/$quizId")
-                                    Log.i("Quiz", "NavigationScreens.QuizCreator.route quizViewModel.currentQuestion.value onPreviousClick: ${quizViewModel.currentQuestion.value}")
                                 },
                             )
                         }
@@ -226,7 +220,6 @@ class MainActivity : ComponentActivity() {
                             CreateQuizScreen(
                                 onNextStepClick = { title, description ->
                                     val quizId = quizViewModel.generateId()
-                                    Log.i("Quiz", "NavigationScreens.CreateQuiz.route --- $quizId")
                                     val quiz = Quiz(id = quizId, title = title, description = description, ArrayList<Question>())
                                     lifecycleScope.launch {
                                         quizViewModel.saveQuiz(quiz = quiz)

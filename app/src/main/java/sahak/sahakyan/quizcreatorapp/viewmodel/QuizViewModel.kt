@@ -1,5 +1,6 @@
 package sahak.sahakyan.quizcreatorapp.viewmodel
 
+import android.util.Log
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -7,7 +8,6 @@ import androidx.lifecycle.ViewModel
 import sahak.sahakyan.quizcreatorapp.entity.Question
 import sahak.sahakyan.quizcreatorapp.entity.Quiz
 import sahak.sahakyan.quizcreatorapp.repository.QuizRepository
-import java.util.UUID
 
 class QuizViewModel(
     private val quizRepository: QuizRepository = QuizRepository()
@@ -15,6 +15,9 @@ class QuizViewModel(
 
     private val _questionCount = mutableIntStateOf(0)
     val questionCount: State<Int> = _questionCount
+
+    private val _questionsSize = mutableIntStateOf(0)
+    val questionsSize: State<Int> = _questionsSize
 
     private val _currentQuestion = mutableStateOf<Question>(Question())
     val currentQuestion: State<Question> = _currentQuestion
@@ -28,6 +31,7 @@ class QuizViewModel(
 
     suspend fun addQuestion(quizId: String, question: Question) {
         quizRepository.addQuestion(question, quizId)
+        _questionsSize.intValue +=1
     }
 
     suspend fun getQuiz(quizId: String): Quiz? {
@@ -35,11 +39,16 @@ class QuizViewModel(
     }
 
     suspend fun getQuestion(quizId: String, questionId: Int): Question? {
-        val question: Question? = quizRepository.getQuestion(quizId, questionId)
-        if (question!= null) {
-            _currentQuestion.value = question
+        return try {
+            val question = quizRepository.getQuestion(quizId, questionId)
+            if (question != null) {
+                _currentQuestion.value = question
+            }
+            question
+        } catch (e: NullPointerException) {
+            Log.d("Quiz--QuizViewModel", "QuizViewModel: nullableQuestion is null")
+            Question(id = questionCount.value) // Assuming you want to create a new Question in case of a NullPointerException
         }
-        return question
     }
 
     suspend fun getQuizzes(): List<Quiz>? {
@@ -72,5 +81,9 @@ class QuizViewModel(
 
     fun setOnPreviousStateChange(onPreviousStateChange: Boolean) {
         _onPreviousStateChange.value = onPreviousStateChange
+    }
+
+    fun setQuestionsSize(questionsSize: Int) {
+        _questionsSize.intValue = questionsSize
     }
 }

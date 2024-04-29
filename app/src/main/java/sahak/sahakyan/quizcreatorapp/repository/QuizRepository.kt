@@ -33,7 +33,6 @@ class QuizRepository {
         val quiz = getQuiz(quizId)
         quiz!!.questions.add(question)
 
-        Log.i("Quiz", "QuizRepository addQuestion() quiz -- $quiz ")
 
         quizzesRef.child(auth.currentUser?.uid.toString()).child(quizId).child("questions").setValue(quiz.questions)
     }
@@ -58,29 +57,32 @@ class QuizRepository {
             }
         }
     }
-
     suspend fun getQuestion(quizId: String, questionId: Int): Question? {
+        Log.d("Quiz--Repository", "getQuestion(): Question id: $questionId")
         return suspendCoroutine { continuation ->
             val userUid = auth.currentUser?.uid
             if (userUid != null) {
                 quizzesRef.child(userUid).child(quizId).child("questions").child(questionId.toString())
-                   .addListenerForSingleValueEvent(object : ValueEventListener {
+                    .addListenerForSingleValueEvent(object : ValueEventListener {
                         override fun onDataChange(dataSnapshot: DataSnapshot) {
                             val question = dataSnapshot.getValue(Question::class.java)
-                            Log.i("Quiz", "QuizRepository getQuestion(): Question is found -- $question")
-                            continuation.resume(question)
+                            if (question != null) {
+                                continuation.resume(question)
+                            } else {
+                                continuation.resumeWithException(NullPointerException("Question cannot be found"))
+                            }
                         }
 
                         override fun onCancelled(databaseError: DatabaseError) {
-                            Log.i("Quiz", "QuizRepository getQuestion(): Question Cannot be find")
-                            continuation.resume(null)
+                            continuation.resumeWithException(databaseError.toException())
                         }
-                   })
+                    })
             } else {
                 continuation.resume(null)
             }
         }
     }
+
 
     suspend fun getQuizzes(): List<Quiz>? {
         return suspendCoroutine { continuation ->
@@ -105,7 +107,11 @@ class QuizRepository {
     suspend fun updateQuestion(quizId: String,questionId: Int, question: Question) {
         val questions: ArrayList<Question> = getQuestionsList(quizId)!!
         questions[questionId] = question
-        quizzesRef.child(auth.currentUser?.uid.toString()).child(quizId).child("questions").setValue(questions)
+        quizzesRef.child(auth.currentUser?.uid.toString()).child(quizId).child("questions").setValue(questions).addOnSuccessListener {
+            Log.i("Quiz--Repository", " updateQuestion(): Question has been updated, Questions: $questions")
+        }.addOnCanceledListener {
+            Log.e("Quiz--Repository", " updateQuestion(): Question Cannot be updated")
+        }
     }
 
     suspend fun isQuestionExistWithId(quizId: String,questionId: String) : Boolean {
