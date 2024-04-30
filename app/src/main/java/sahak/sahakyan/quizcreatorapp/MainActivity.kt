@@ -26,7 +26,6 @@ import com.google.firebase.FirebaseApp
 import kotlinx.coroutines.launch
 import sahak.sahakyan.quizcreatorapp.entity.Question
 import sahak.sahakyan.quizcreatorapp.entity.Quiz
-import sahak.sahakyan.quizcreatorapp.entity.Quizzes
 import sahak.sahakyan.quizcreatorapp.navigation.BottomBar
 import sahak.sahakyan.quizcreatorapp.navigation.NavigationScreens
 import sahak.sahakyan.quizcreatorapp.sign_in.GoogleAuthUiClient
@@ -36,6 +35,7 @@ import sahak.sahakyan.quizcreatorapp.ui.HomeScreen
 import sahak.sahakyan.quizcreatorapp.ui.ProfileScreen
 import sahak.sahakyan.quizcreatorapp.ui.QuizCreatorScreen
 import sahak.sahakyan.quizcreatorapp.ui.theme.QuizCreatorAppTheme
+import sahak.sahakyan.quizcreatorapp.viewmodel.HomeViewModel
 import sahak.sahakyan.quizcreatorapp.viewmodel.QuizViewModel
 import sahak.sahakyan.quizcreatorapp.viewmodel.SignInViewModel
 import sahak.sahakyan.quizcreatorapp.viewmodel.UserViewModel
@@ -46,6 +46,7 @@ class MainActivity : ComponentActivity() {
     private lateinit var userViewModel: UserViewModel
     private lateinit var signInViewModel: SignInViewModel
     private lateinit var quizViewModel: QuizViewModel
+    private lateinit var homeViewModel: HomeViewModel
 
     override fun onCreate(savedInstanceState: Bundle?) {
 
@@ -58,6 +59,7 @@ class MainActivity : ComponentActivity() {
         signInViewModel = ViewModelProvider(this)[SignInViewModel::class.java]
         quizViewModel = ViewModelProvider(this)[QuizViewModel::class.java]
         userViewModel = ViewModelProvider(this)[UserViewModel::class.java]
+        homeViewModel = ViewModelProvider(this)[HomeViewModel::class.java]
 
         super.onCreate(savedInstanceState)
         FirebaseApp.initializeApp(this)
@@ -127,23 +129,22 @@ class MainActivity : ComponentActivity() {
                             )
                         }
                         composable(BottomBar.Home.route) {
-
-                            fun getQuizData(): Quizzes {
-                                var userEmail: String = ""
-                                var quizzesList: List<Quiz> = emptyList()
+                            LaunchedEffect(key1 = true) {
                                 lifecycleScope.launch {
-                                    userEmail = userViewModel.getCurrentUser().email ?: ""
-                                    quizzesList = quizViewModel.getQuizzes() ?: emptyList()
+                                    homeViewModel.setQuizzes(
+                                        homeViewModel.getQuizzes()!!
+                                    )
                                 }
-                                return Quizzes(userEmail = userEmail, quizzes = quizzesList)
                             }
-                            val quizData = getQuizData()
+
+                            Log.i("Quiz--MainActivity","BottomBar.Home.route HomeViewModel.quizzes = ${homeViewModel.quizzes.value}")
+
                             HomeScreen(
+                                viewModel = homeViewModel,
                                 navController = navController,
-                                quizData = quizData,
                                 onAddClick = {
                                     navController.navigate(NavigationScreens.CreateQuiz.route)
-                                }
+                                },
                             )
                         }
                         composable(BottomBar.Profile.route) {
@@ -176,22 +177,22 @@ class MainActivity : ComponentActivity() {
                             QuizCreatorScreen(
                                 viewModel = quizViewModel,
                                 onNextClick = { question ->
-                                    Log.d("Quiz--MainActivity", "quizViewModel.onPreviousStateChange.value is: ${quizViewModel.onPreviousStateChange.value}")
+//                                    Log.d("Quiz--MainActivity", "quizViewModel.onPreviousStateChange.value is: ${quizViewModel.onPreviousStateChange.value}")
                                     if(quizViewModel.onPreviousStateChange.value) {
-                                        Log.d("Quiz--MainActivity", "quizViewModel.onPreviousStateChange.value is: true")
+//                                        Log.d("Quiz--MainActivity", "quizViewModel.onPreviousStateChange.value is: true")
                                         lifecycleScope.launch {
                                             quizViewModel.updateQuestion(
                                                 question = question,
                                                 quizId = quizId,
                                                 questionId = quizViewModel.questionCount.value
                                             )
-                                            Log.d("Quiz--MainActivity", "Question before nullableQuestion is : ${quizViewModel.currentQuestion.value}")
+//                                            Log.d("Quiz--MainActivity", "Question before nullableQuestion is : ${quizViewModel.currentQuestion.value}")
                                             val nullableQuestion: Question = quizViewModel.getQuestion(quizId, quizViewModel.questionCount.value)!!
-                                            Log.d("Quiz--MainActivity", "Question after nullableQuestion is : ${quizViewModel.currentQuestion.value}")
+//                                            Log.d("Quiz--MainActivity", "Question after nullableQuestion is : ${quizViewModel.currentQuestion.value}")
                                             quizViewModel.setCurrentQuestion(nullableQuestion)
                                         }
                                     } else {
-                                        Log.d("Quiz--MainActivity", "quizViewModel.onPreviousStateChange.value is: false")
+//                                        Log.d("Quiz--MainActivity", "quizViewModel.onPreviousStateChange.value is: false")
                                         question.id = quizViewModel.questionCount.value
                                         lifecycleScope.launch {
                                             quizViewModel.addQuestion(
@@ -201,7 +202,7 @@ class MainActivity : ComponentActivity() {
                                         }
                                         quizViewModel.setCurrentQuestion(Question())
                                     }
-                                    Log.i("Quiz--MainActivity", "Navigating to destination ID: NavigationScreens.QuizCreator.route")
+//                                    Log.i("Quiz--MainActivity", "Navigating to destination ID: NavigationScreens.QuizCreator.route")
                                     navController.navigate(NavigationScreens.QuizCreator.route + "/$quizId")
                                 },
                                 onPreviousClick = {
@@ -214,6 +215,18 @@ class MainActivity : ComponentActivity() {
                                     }
                                     navController.navigate(NavigationScreens.QuizCreator.route + "/$quizId")
                                 },
+                                onFinishClick = { question ->
+//                                    Log.d("Quiz--MainActivity", "OnFinishClick adding question and navigating to home page")
+                                    question.id = quizViewModel.questionCount.value
+                                    lifecycleScope.launch {
+                                        quizViewModel.addQuestion(
+                                            question = question,
+                                            quizId = quizId
+                                        )
+                                    }
+                                    quizViewModel.setDefaultValues()
+                                    navController.navigate(BottomBar.Home.route)
+                                }
                             )
                         }
                         composable(NavigationScreens.CreateQuiz.route) {

@@ -1,24 +1,26 @@
 package sahak.sahakyan.quizcreatorapp.ui
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.material3.Button
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -29,15 +31,17 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import sahak.sahakyan.quizcreatorapp.R
-import sahak.sahakyan.quizcreatorapp.entity.Quizzes
-import sahak.sahakyan.quizcreatorapp.navigation.NavigationScreens
+import sahak.sahakyan.quizcreatorapp.viewmodel.HomeViewModel
 
 @Composable
 fun HomeScreen(
-    navController: NavHostController,
-    quizData: Quizzes = Quizzes("", emptyList()),
+    viewModel: HomeViewModel = HomeViewModel(),
+    navController: NavHostController = rememberNavController(),
     onAddClick: ()->Unit = {}
 ) {
+
+    val quizzes by viewModel.quizzes
+
     Box(modifier = Modifier.fillMaxSize()) {
         // Background image
         Image(
@@ -57,8 +61,7 @@ fun HomeScreen(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 20.dp, vertical = 20.dp)
-                    .border(1.dp, Color.Red),
+                    .padding(horizontal = 20.dp, vertical = 20.dp),
                 verticalArrangement = Arrangement.Center,
             ) {
                 Text(
@@ -67,28 +70,19 @@ fun HomeScreen(
                     color = Color.White,
                     style = MaterialTheme.typography.bodyLarge
                 )
-                LazyVerticalGrid(
-                    columns = GridCells.Fixed(5),
-                    modifier = Modifier,
-                    contentPadding = PaddingValues(
-                        start = 12.dp,
-                        top = 16.dp,
-                        end = 12.dp,
-                        bottom = 16.dp
-                    ),
+                Spacer(modifier = Modifier.height(20.dp))
+                LazyColumn(
+                    verticalArrangement = Arrangement.spacedBy(24.dp),
                 ) {
-                    items(quizData.quizzes.size) { index ->
+                    this.items(quizzes.size) {
                         ItemBox(
-                            title = quizData.quizzes[index].title,
+                            title = quizzes[it].title,
                             onClick = {
-
-                                navController.navigate(NavigationScreens.QuizCreator.route + "/${quizData.quizzes[index].id}")
-
                                 // TODO -- OPEN THAT QUIZ
                             }
                         )
-                    }
 
+                    }
                 }
             }
             Column(
@@ -126,16 +120,27 @@ fun ItemBox(
     title: String,
     onClick: () -> Unit
 ) {
-    Button(onClick = onClick,
-        modifier = Modifier
+
+    Column(
+        modifier = Modifier.fillMaxWidth()
+            .clickable { onClick() }
+            .border(1.dp, Color.White, RoundedCornerShape(20))
+            .background(Color.White, RoundedCornerShape(20))
+        ,
+        verticalArrangement = Arrangement.Center,
     ) {
-        Text(text = title)
+        Text(
+            text = title,
+            color = Color.Black,
+            style = MaterialTheme.typography.bodyLarge,
+            modifier = Modifier.padding(20.dp)
+        )
     }
 }
 
 @Preview(showBackground = true)
 @Composable
 fun HomeScreenPreview() {
-    HomeScreen(rememberNavController())
+    HomeScreen()
 }
 

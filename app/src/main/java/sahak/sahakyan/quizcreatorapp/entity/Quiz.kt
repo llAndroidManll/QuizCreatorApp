@@ -1,10 +1,6 @@
 package sahak.sahakyan.quizcreatorapp.entity
 
 
-data class Quizzes(
-    val userEmail: String,
-    val quizzes: List<Quiz>
-)
 
 data class Quiz (
     val id: String = "",

@@ -59,7 +59,7 @@ fun QuizCreatorScreen(
     viewModel: QuizViewModel,
     onPreviousClick: () -> Unit,
     onNextClick: (Question) -> Unit = {},
-    onFinishClick: () -> Unit = {},
+    onFinishClick: (Question) -> Unit = {},
 ) {
     val currentQuestion by viewModel.currentQuestion
 
@@ -245,11 +245,10 @@ fun QuizCreatorScreen(
                         modifier = Modifier.height(50.dp)
                     )
                 }
-                if (questionCount < 20) {
+                if (questionCount < 19) {
                     ButtonStyle(
                         text = "Next Question",
                         onClick = {
-
                             val answers = mutableListOf(answer1, answer2, answer3, answer4)
                             showDialog.value = listOf(
                                 questionValue.isEmpty(),
@@ -285,7 +284,33 @@ fun QuizCreatorScreen(
                     ButtonStyle(
                         text = "Finish",
                         onClick = {
-                            onFinishClick()
+                            val answers = mutableListOf(answer1, answer2, answer3, answer4)
+                            showDialog.value = listOf(
+                                questionValue.isEmpty(),
+                                answer1.isEmpty(),
+                                answer2.isEmpty(),
+                                answer3.isEmpty(),
+                                answer4.isEmpty(),
+                            ).any { it }
+                            if (selectedOption == null) {
+                                showOptionDialog.value = true
+                            }
+                            showAnswersDuplicationDialog.value = checkForDuplicates(answers = answers)
+
+                            if(!showDialog.value && !showOptionDialog.value && !showAnswersDuplicationDialog.value) {
+                                viewModel.currentQuestion.value
+                                    .answers = answers
+                                viewModel.currentQuestion.value
+                                    .image = selectedImageCoin
+                                viewModel.currentQuestion.value
+                                    .question = questionValue
+                                viewModel.currentQuestion.value
+                                    .correctAnswer = viewModel.currentQuestion.value
+                                    .answers.indexOf(selectedOption)
+                                onFinishClick(
+                                    viewModel.currentQuestion.value
+                                )
+                            }
                         },
                         modifier = Modifier.height(50.dp)
                     )

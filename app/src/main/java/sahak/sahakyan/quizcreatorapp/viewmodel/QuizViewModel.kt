@@ -47,13 +47,11 @@ class QuizViewModel(
             question
         } catch (e: NullPointerException) {
             Log.d("Quiz--QuizViewModel", "QuizViewModel: nullableQuestion is null")
-            Question(id = questionCount.value) // Assuming you want to create a new Question in case of a NullPointerException
+            Question(id = questionCount.value)
         }
     }
 
-    suspend fun getQuizzes(): List<Quiz>? {
-        return quizRepository.getQuizzes()
-    }
+
 
     suspend fun updateQuestion(quizId: String,questionId: Int, question: Question) {
         quizRepository.updateQuestion(quizId, questionId, question)
@@ -85,5 +83,12 @@ class QuizViewModel(
 
     fun setQuestionsSize(questionsSize: Int) {
         _questionsSize.intValue = questionsSize
+    }
+
+    fun setDefaultValues() {
+        _questionCount.intValue = 0
+        _questionsSize.intValue = 0
+        _currentQuestion.value = Question()
+        _onPreviousStateChange.value = false
     }
 }
