@@ -116,7 +116,7 @@ fun QuizCreatorScreen(
 
             CustomLinearProgressIndicator(
                 modifier = Modifier.fillMaxWidth().border(1.dp, Color.LightGray,RoundedCornerShape(50)),
-                progress = (viewModel.questionCount.value + 1) / 20f
+                progress = (viewModel.questionCount.value + 1) / (viewModel.questionsSize.value).toFloat()
             )
 
             OutlinedTextField(
@@ -245,7 +245,7 @@ fun QuizCreatorScreen(
                         modifier = Modifier.height(50.dp)
                     )
                 }
-                if (questionCount < 19) {
+                if (questionCount < viewModel.questionsSize.value-1) {
                     ButtonStyle(
                         text = "Next Question",
                         onClick = {

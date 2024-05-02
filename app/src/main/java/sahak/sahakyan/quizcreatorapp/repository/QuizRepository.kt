@@ -98,8 +98,9 @@ class QuizRepository {
                             }
                             if (quizzesList.isEmpty()) {
                                 continuation.resumeWithException(IllegalArgumentException("Quizzes list is empty"))
+                            } else {
+                                continuation.resume(quizzesList)
                             }
-                            continuation.resume(quizzesList)
                         }
 
                         override fun onCancelled(databaseError: DatabaseError) {

@@ -23,13 +23,13 @@ import sahak.sahakyan.quizcreatorapp.R
 
 @Composable
 fun CreateQuizScreen(
-    onNextStepClick: (String, String) -> Unit
+    onNextStepClick: (String, Int) -> Unit
 ) {
 
     val title = remember {
         mutableStateOf("")
     }
-    val description = remember {
+    val questionSize = remember {
         mutableStateOf("")
     }
 
@@ -64,15 +64,18 @@ fun CreateQuizScreen(
 
             OutlinedTextField(
                 columnModifier = Modifier.padding(top = 50.dp),
-                value = description.value,
-                onValueChange = { description.value = it },
-                placeHolder = "Description",
-
+                value = questionSize.value,
+                onValueChange = {
+                    if (it.all { char -> char.isDigit() }) {
+                        questionSize.value = it
+                    }
+                },
+                placeHolder = "Questions number",
             )
 
             ButtonStyle(
                 text = "Next Step",
-                onClick = { onNextStepClick(title.value, description.value) },
+                onClick = { onNextStepClick(title.value, questionSize.value.toInt()) },
                 modifier = Modifier.padding(50.dp)
             )
         }

@@ -5,7 +5,7 @@ package sahak.sahakyan.quizcreatorapp.entity
 data class Quiz (
     val id: String = "",
     val title: String = "",
-    val description: String = "",
+    val questionsSize: Int = 0,
     val questions: ArrayList<Question> = emptyArrayList(),
 )
 

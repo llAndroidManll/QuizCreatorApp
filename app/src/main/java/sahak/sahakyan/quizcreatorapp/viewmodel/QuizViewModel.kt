@@ -19,6 +19,7 @@ class QuizViewModel(
     private val _questionsSize = mutableIntStateOf(0)
     val questionsSize: State<Int> = _questionsSize
 
+
     private val _currentQuestion = mutableStateOf<Question>(Question())
     val currentQuestion: State<Question> = _currentQuestion
 
@@ -31,7 +32,6 @@ class QuizViewModel(
 
     suspend fun addQuestion(quizId: String, question: Question) {
         quizRepository.addQuestion(question, quizId)
-        _questionsSize.intValue +=1
     }
 
     suspend fun getQuiz(quizId: String): Quiz? {

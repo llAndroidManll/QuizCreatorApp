@@ -231,11 +231,12 @@ class MainActivity : ComponentActivity() {
                         }
                         composable(NavigationScreens.CreateQuiz.route) {
                             CreateQuizScreen(
-                                onNextStepClick = { title, description ->
+                                onNextStepClick = { title, number ->
                                     val quizId = quizViewModel.generateId()
-                                    val quiz = Quiz(id = quizId, title = title, description = description, ArrayList<Question>())
+                                    val quiz = Quiz(id = quizId, title = title, questionsSize = number, ArrayList<Question>(number))
                                     lifecycleScope.launch {
                                         quizViewModel.saveQuiz(quiz = quiz)
+                                        quizViewModel.setQuestionsSize(number)
                                     }
                                     navController.navigate(NavigationScreens.QuizCreator.route + "/$quizId")
                                 },
