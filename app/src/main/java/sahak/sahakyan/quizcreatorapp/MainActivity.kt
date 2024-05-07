@@ -1,5 +1,6 @@
 package sahak.sahakyan.quizcreatorapp
 
+import android.annotation.SuppressLint
 import android.os.Bundle
 import android.util.Log
 import android.widget.Toast
@@ -28,17 +29,20 @@ import sahak.sahakyan.quizcreatorapp.entity.Question
 import sahak.sahakyan.quizcreatorapp.entity.Quiz
 import sahak.sahakyan.quizcreatorapp.navigation.BottomBar
 import sahak.sahakyan.quizcreatorapp.navigation.NavigationScreens
+import sahak.sahakyan.quizcreatorapp.repository.QuizRepository
 import sahak.sahakyan.quizcreatorapp.sign_in.GoogleAuthUiClient
 import sahak.sahakyan.quizcreatorapp.sign_in.SignInScreen
 import sahak.sahakyan.quizcreatorapp.ui.CreateQuizScreen
 import sahak.sahakyan.quizcreatorapp.ui.HomeScreen
 import sahak.sahakyan.quizcreatorapp.ui.ProfileScreen
 import sahak.sahakyan.quizcreatorapp.ui.QuizCreatorScreen
+import sahak.sahakyan.quizcreatorapp.ui.StartQuizScreen
 import sahak.sahakyan.quizcreatorapp.ui.theme.QuizCreatorAppTheme
 import sahak.sahakyan.quizcreatorapp.viewmodel.HomeViewModel
 import sahak.sahakyan.quizcreatorapp.viewmodel.QuizViewModel
 import sahak.sahakyan.quizcreatorapp.viewmodel.SignInViewModel
 import sahak.sahakyan.quizcreatorapp.viewmodel.UserViewModel
+import sahak.sahakyan.quizcreatorapp.viewmodel.startquiz.StartQuizViewModel
 
 class MainActivity : ComponentActivity() {
 
@@ -47,7 +51,9 @@ class MainActivity : ComponentActivity() {
     private lateinit var signInViewModel: SignInViewModel
     private lateinit var quizViewModel: QuizViewModel
     private lateinit var homeViewModel: HomeViewModel
+    private lateinit var startQuizViewModel: StartQuizViewModel
 
+    @SuppressLint("StateFlowValueCalledInComposition")
     override fun onCreate(savedInstanceState: Bundle?) {
 
         googleAuthUiClient = GoogleAuthUiClient(
@@ -60,6 +66,7 @@ class MainActivity : ComponentActivity() {
         quizViewModel = ViewModelProvider(this)[QuizViewModel::class.java]
         userViewModel = ViewModelProvider(this)[UserViewModel::class.java]
         homeViewModel = ViewModelProvider(this)[HomeViewModel::class.java]
+        startQuizViewModel = ViewModelProvider(this)[StartQuizViewModel::class.java]
 
         super.onCreate(savedInstanceState)
         FirebaseApp.initializeApp(this)
@@ -136,15 +143,25 @@ class MainActivity : ComponentActivity() {
                                     )
                                 }
                             }
-
-                            Log.i("Quiz--MainActivity","BottomBar.Home.route HomeViewModel.quizzes = ${homeViewModel.quizzes.value}")
-
                             HomeScreen(
                                 viewModel = homeViewModel,
                                 navController = navController,
                                 onAddClick = {
                                     navController.navigate(NavigationScreens.CreateQuiz.route)
                                 },
+                                onRunButton = {id ->
+
+                                    lifecycleScope.launch {
+                                        startQuizViewModel.getQuiz(id)
+                                            ?.let { it1 -> startQuizViewModel.setQuiz(it1) }
+                                        Log.d(
+                                            "Quiz--Composable--Home",
+                                            "Starting Quiz with quiz: ${startQuizViewModel.currentQuiz.value}"
+                                        )
+                                        navController.navigate(NavigationScreens.StartQuiz.route + "/$id")
+                                    }
+                                    }
+
                             )
                         }
                         composable(BottomBar.Profile.route) {
@@ -167,32 +184,24 @@ class MainActivity : ComponentActivity() {
                             val quizId = backStackEntry.arguments?.getString("quizId") ?: ""
 
 
-                            Log.d("Quiz--MainActivity", "QuestionsListSize is: ${quizViewModel.questionsSize.value}")
-                            Log.d("Quiz--MainActivity", "QuestionCount is: ${quizViewModel.questionCount.value}")
                             if (quizViewModel.questionsSize.value == quizViewModel.questionCount.value) {
-                                Log.d("Quiz--MainActivity","setting OnPreviousState to false")
                                 quizViewModel.setOnPreviousStateChange(false)
                             }
 
                             QuizCreatorScreen(
                                 viewModel = quizViewModel,
                                 onNextClick = { question ->
-//                                    Log.d("Quiz--MainActivity", "quizViewModel.onPreviousStateChange.value is: ${quizViewModel.onPreviousStateChange.value}")
                                     if(quizViewModel.onPreviousStateChange.value) {
-//                                        Log.d("Quiz--MainActivity", "quizViewModel.onPreviousStateChange.value is: true")
                                         lifecycleScope.launch {
                                             quizViewModel.updateQuestion(
                                                 question = question,
                                                 quizId = quizId,
                                                 questionId = quizViewModel.questionCount.value
                                             )
-//                                            Log.d("Quiz--MainActivity", "Question before nullableQuestion is : ${quizViewModel.currentQuestion.value}")
                                             val nullableQuestion: Question = quizViewModel.getQuestion(quizId, quizViewModel.questionCount.value)!!
-//                                            Log.d("Quiz--MainActivity", "Question after nullableQuestion is : ${quizViewModel.currentQuestion.value}")
                                             quizViewModel.setCurrentQuestion(nullableQuestion)
                                         }
                                     } else {
-//                                        Log.d("Quiz--MainActivity", "quizViewModel.onPreviousStateChange.value is: false")
                                         question.id = quizViewModel.questionCount.value
                                         lifecycleScope.launch {
                                             quizViewModel.addQuestion(
@@ -202,7 +211,6 @@ class MainActivity : ComponentActivity() {
                                         }
                                         quizViewModel.setCurrentQuestion(Question())
                                     }
-//                                    Log.i("Quiz--MainActivity", "Navigating to destination ID: NavigationScreens.QuizCreator.route")
                                     navController.navigate(NavigationScreens.QuizCreator.route + "/$quizId")
                                 },
                                 onPreviousClick = {
@@ -216,7 +224,6 @@ class MainActivity : ComponentActivity() {
                                     navController.navigate(NavigationScreens.QuizCreator.route + "/$quizId")
                                 },
                                 onFinishClick = { question ->
-//                                    Log.d("Quiz--MainActivity", "OnFinishClick adding question and navigating to home page")
                                     question.id = quizViewModel.questionCount.value
                                     lifecycleScope.launch {
                                         quizViewModel.addQuestion(
@@ -240,6 +247,26 @@ class MainActivity : ComponentActivity() {
                                     }
                                     navController.navigate(NavigationScreens.QuizCreator.route + "/$quizId")
                                 },
+                            )
+                        }
+                        composable(NavigationScreens.StartQuiz.route + "/{quizId}") { backStackEntry ->
+                            val quizId = backStackEntry.arguments?.getString("quizId") ?: ""
+
+                            Log.d("Quiz--Composable--StartQuiz", "StartViewModel quiz: ${startQuizViewModel.currentQuiz.value}")
+
+                            val quiz = startQuizViewModel.currentQuiz.value
+
+                            startQuizViewModel.setCurrentQuestion(quiz!!.questions[startQuizViewModel.questionCount.value])
+
+                            Log.i("Quiz--Composable--StartQuiz", "quiz field: $quiz")
+                            StartQuizScreen(
+                                viewModel = startQuizViewModel,
+                                onNextClick = {
+//                                    navController.navigate(NavigationScreens.StartQuiz.route + "/$quizId")
+                                },
+                                onFinishClick = {
+                                    navController.navigate(BottomBar.Home.route)
+                                }
                             )
                         }
                     }

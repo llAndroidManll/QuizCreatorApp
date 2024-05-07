@@ -43,6 +43,9 @@ class QuizRepository {
                     .addListenerForSingleValueEvent(object : ValueEventListener {
                         override fun onDataChange(dataSnapshot: DataSnapshot) {
                             val quiz = dataSnapshot.getValue(Quiz::class.java)
+
+                            Log.d("Quiz--Repository", "getQuiz(): Quiz: $quiz")
+
                             continuation.resume(quiz)
                         }
 
