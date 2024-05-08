@@ -262,7 +262,10 @@ class MainActivity : ComponentActivity() {
                             StartQuizScreen(
                                 viewModel = startQuizViewModel,
                                 onNextClick = {
-//                                    navController.navigate(NavigationScreens.StartQuiz.route + "/$quizId")
+                                    navController.navigate(NavigationScreens.StartQuiz.route + "/$quizId")
+                                },
+                                onPreviousClick = {
+                                    navController.navigate(NavigationScreens.StartQuiz.route + "/$quizId")
                                 },
                                 onFinishClick = {
                                     navController.navigate(BottomBar.Home.route)

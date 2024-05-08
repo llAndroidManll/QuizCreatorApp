@@ -50,8 +50,7 @@ fun OutlinedTextField(
                 unfocusedBorderColor = Color.Transparent,
                 focusedBorderColor = Color.Transparent,
             ),
-
-            )
+        )
         Spacer(
             modifier = spacerModifier
         )
