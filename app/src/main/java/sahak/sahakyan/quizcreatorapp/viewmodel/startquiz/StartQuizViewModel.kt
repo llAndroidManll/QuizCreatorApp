@@ -44,8 +44,8 @@ class StartQuizViewModel (
         return quiz
     }
 
-    fun checkAnswer(questionIndex: Int, answerIndex: Int): Boolean {
-        val question = _currentQuiz.value?.questions?.get(questionIndex)
+    fun checkAnswer(answerIndex: Int): Boolean {
+        val question = _currentQuiz.value?.questions?.get(questionCount.value)
         if(question!= null && question.correctAnswer == answerIndex) {
             incrementCorrectAnswersCount()
             return true

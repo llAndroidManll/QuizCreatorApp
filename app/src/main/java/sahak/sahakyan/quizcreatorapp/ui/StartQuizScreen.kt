@@ -1,6 +1,5 @@
 package sahak.sahakyan.quizcreatorapp.ui
 
-import android.util.Log
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -13,7 +12,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -22,6 +20,7 @@ import androidx.compose.material3.RadioButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -31,7 +30,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.MutableLiveData
@@ -45,7 +43,7 @@ import sahak.sahakyan.quizcreatorapp.entity.Question
 @Composable
 fun StartQuizScreen(
     viewModel: StartQuizViewModel = viewModel<StartQuizViewModel>(),
-    onPreviousClick: () -> Unit = {},
+    onCheckClick: () -> Unit = {},
     onNextClick: () -> Unit = {},
     onFinishClick: () -> Unit = {}
 ) {
@@ -53,7 +51,10 @@ fun StartQuizScreen(
         MutableLiveData<Question>(viewModel.currentQuestion.value)
     }
     var selectedOption by remember { mutableStateOf<String?>(null) }
+    var selectedOptionIndex by remember { mutableIntStateOf(-1) }
     val snackBarVisibleState = remember { mutableStateOf(false) }
+    var isCorrectAnswerChosen by remember { mutableStateOf(false) }
+    var isChosenAnswerCorrect by remember { mutableStateOf(false) }
 
     Box(modifier = Modifier.fillMaxSize()) {
         Image(
@@ -126,51 +127,22 @@ fun StartQuizScreen(
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-
-                ItemsInColumn(
-                    selected = selectedOption == currentQuestion.value!!.answers[0],
-                    text = currentQuestion.value!!.answers[0],
-                    onClick = {
-                        if (currentQuestion.value!!.answers[0] == "") {
-                            snackBarVisibleState.value = true
-                        } else {
-                            selectedOption = currentQuestion.value!!.answers[0]
-                        }
-                    }
-                )
-                ItemsInColumn(
-                    selected = selectedOption == currentQuestion.value!!.answers[1],
-                    text = currentQuestion.value!!.answers[1],
-                    onClick = {
-                        if (currentQuestion.value!!.answers[1] == "") {
-                            snackBarVisibleState.value = true
-                        } else {
-                            selectedOption = currentQuestion.value!!.answers[1]
-                        }
-                    }
-                )
-                ItemsInColumn(
-                    selected = selectedOption == currentQuestion.value!!.answers[2],
-                    text = currentQuestion.value!!.answers[2],
-                    onClick = {
-                        if (currentQuestion.value!!.answers[2] == "") {
-                            snackBarVisibleState.value = true
-                        } else {
-                            selectedOption = currentQuestion.value!!.answers[2]
-                        }
-                    }
-                )
-                ItemsInColumn(
-                    selected = selectedOption == currentQuestion.value!!.answers[3],
-                    text = currentQuestion.value!!.answers[3],
-                    onClick = {
-                        if (currentQuestion.value!!.answers[3] == "") {
-                            snackBarVisibleState.value = true
-                        } else {
-                            selectedOption = currentQuestion.value!!.answers[3]
-                        }
-                    }
-                )
+                currentQuestion.value!!.answers.forEachIndexed  { index,answer ->
+                    ItemsInColumn(
+                        selected = selectedOption == answer,
+                        text = answer,
+                        correctAnswer = currentQuestion.value!!.answers[currentQuestion.value!!.correctAnswer],
+                        chosenAnswer = selectedOption,
+                        isCorrectAnswerChosen = isCorrectAnswerChosen,
+                        isChosenAnswerCorrect = isChosenAnswerCorrect,
+                        onClick = {
+                            if (selectedOption == null) {
+                                selectedOption = answer
+                                selectedOptionIndex = index
+                            }
+                        },
+                    )
+                }
             }
 
             // Buttons
@@ -181,17 +153,23 @@ fun StartQuizScreen(
                 horizontalArrangement = Arrangement.SpaceEvenly,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                if (viewModel.questionCount.value > 0) {
-                    ButtonStyle(
-                        text = "Previous Question",
-                        onClick = {
-                            viewModel.decrementQuestionCount()
-                            onPreviousClick()
-
-                        },
-                        modifier = Modifier.height(50.dp)
-                    )
-                }
+                ButtonStyle(
+                    text = "Check Answer",
+                    onClick = {
+                        // Check if an option is selected
+                        if (selectedOption != null) {
+                            // Check the answer and update UI accordingly
+                            isChosenAnswerCorrect = viewModel.checkAnswer(
+                                answerIndex = selectedOptionIndex
+                            )
+                            isCorrectAnswerChosen = true
+                        } else {
+                            // Show snackbar or toast to prompt the user to select an option
+                            snackBarVisibleState.value = true
+                        }
+                    },
+                    modifier = Modifier.height(50.dp)
+                )
                 if (viewModel.questionCount.value < viewModel.questionsSize.value - 1) {
                     ButtonStyle(
                         text = "Next Question",
@@ -222,12 +200,29 @@ fun StartQuizScreen(
 fun ItemsInColumn(
     selected: Boolean = false,
     text: String = "",
+    correctAnswer: String = "",
+    chosenAnswer: String? = null,
+    isCorrectAnswerChosen: Boolean = false,
+    isChosenAnswerCorrect: Boolean = false,
     onClick: () -> Unit = {},
 ) {
+    val color = when {
+        // If the chosen answer is correct, paint it green
+        isCorrectAnswerChosen && text == correctAnswer -> Color.Green
+        // If the chosen answer is incorrect and matches this option, paint it red
+        isCorrectAnswerChosen && text == chosenAnswer && !isChosenAnswerCorrect -> Color.Red
+        // If the chosen answer is correct and this is the correct answer, paint it green
+        isCorrectAnswerChosen && text == chosenAnswer && isChosenAnswerCorrect -> Color.Green
+        // If it's selected, keep it white
+        selected -> Color.Transparent
+        // Otherwise, keep it white
+        else -> Color.Transparent
+    }
+
     Card(
         modifier = Modifier.padding(vertical = 10.dp),
         colors = CardDefaults.cardColors(
-            containerColor = Color.Transparent,
+            containerColor = color,
             contentColor = Color.White,
             disabledContainerColor = Color.Gray,
             disabledContentColor = Color.DarkGray

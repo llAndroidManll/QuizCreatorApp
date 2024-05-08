@@ -29,7 +29,6 @@ import sahak.sahakyan.quizcreatorapp.entity.Question
 import sahak.sahakyan.quizcreatorapp.entity.Quiz
 import sahak.sahakyan.quizcreatorapp.navigation.BottomBar
 import sahak.sahakyan.quizcreatorapp.navigation.NavigationScreens
-import sahak.sahakyan.quizcreatorapp.repository.QuizRepository
 import sahak.sahakyan.quizcreatorapp.sign_in.GoogleAuthUiClient
 import sahak.sahakyan.quizcreatorapp.sign_in.SignInScreen
 import sahak.sahakyan.quizcreatorapp.ui.CreateQuizScreen
@@ -264,13 +263,16 @@ class MainActivity : ComponentActivity() {
                                 onNextClick = {
                                     navController.navigate(NavigationScreens.StartQuiz.route + "/$quizId")
                                 },
-                                onPreviousClick = {
-                                    navController.navigate(NavigationScreens.StartQuiz.route + "/$quizId")
+                                onCheckClick = {
+
                                 },
                                 onFinishClick = {
-                                    navController.navigate(BottomBar.Home.route)
+                                    navController.navigate(NavigationScreens.QuizResult.route)
                                 }
                             )
+                        }
+                        composable(NavigationScreens.QuizResult.route) {
+
                         }
                     }
                 }
