@@ -136,10 +136,8 @@ fun StartQuizScreen(
                         isCorrectAnswerChosen = isCorrectAnswerChosen,
                         isChosenAnswerCorrect = isChosenAnswerCorrect,
                         onClick = {
-                            if (selectedOption == null) {
-                                selectedOption = answer
-                                selectedOptionIndex = index
-                            }
+                            selectedOption = answer
+                            selectedOptionIndex = index
                         },
                     )
                 }
@@ -219,6 +217,17 @@ fun ItemsInColumn(
         else -> Color.Transparent
     }
 
+    val borderColor = when {
+        // If the chosen answer is correct, paint it green
+        isCorrectAnswerChosen && text == correctAnswer -> Color.Green
+        // If the chosen answer is incorrect and matches this option, paint it red
+        isCorrectAnswerChosen && text == chosenAnswer && !isChosenAnswerCorrect -> Color.Red
+        // If the chosen answer is correct and this is the correct answer, paint it green
+        isCorrectAnswerChosen && text == chosenAnswer && isChosenAnswerCorrect -> Color.Green
+        selected -> Color.White
+        else -> Color.White
+    }
+
     Card(
         modifier = Modifier.padding(vertical = 10.dp),
         colors = CardDefaults.cardColors(
@@ -227,7 +236,7 @@ fun ItemsInColumn(
             disabledContainerColor = Color.Gray,
             disabledContentColor = Color.DarkGray
         ),
-        border = BorderStroke(1.dp, Color.White),
+        border = BorderStroke(1.dp, borderColor),
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),

@@ -35,6 +35,7 @@ import sahak.sahakyan.quizcreatorapp.ui.CreateQuizScreen
 import sahak.sahakyan.quizcreatorapp.ui.HomeScreen
 import sahak.sahakyan.quizcreatorapp.ui.ProfileScreen
 import sahak.sahakyan.quizcreatorapp.ui.QuizCreatorScreen
+import sahak.sahakyan.quizcreatorapp.ui.QuizResultScreen
 import sahak.sahakyan.quizcreatorapp.ui.StartQuizScreen
 import sahak.sahakyan.quizcreatorapp.ui.theme.QuizCreatorAppTheme
 import sahak.sahakyan.quizcreatorapp.viewmodel.HomeViewModel
@@ -272,7 +273,13 @@ class MainActivity : ComponentActivity() {
                             )
                         }
                         composable(NavigationScreens.QuizResult.route) {
-
+                            QuizResultScreen(
+                                viewModel = startQuizViewModel,
+                                onGoHomeClick = {
+                                    navController.navigate(BottomBar.Home.route)
+                                    startQuizViewModel.setDefaultValues()
+                                }
+                            )
                         }
                     }
                 }
