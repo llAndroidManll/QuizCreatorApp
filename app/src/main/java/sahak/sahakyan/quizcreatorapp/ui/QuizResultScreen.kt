@@ -21,7 +21,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import sahak.sahakyan.quizcreatorapp.viewmodel.startquiz.StartQuizViewModel
+import sahak.sahakyan.quizcreatorapp.viewmodel.StartQuizViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import sahak.sahakyan.quizcreatorapp.R
 

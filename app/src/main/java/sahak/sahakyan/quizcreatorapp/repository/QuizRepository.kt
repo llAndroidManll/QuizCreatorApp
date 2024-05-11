@@ -25,14 +25,51 @@ class QuizRepository {
     suspend fun saveQuiz(quiz: Quiz) {
         quizzesRef.child(auth.currentUser?.uid.toString()).child(quiz.id).setValue(quiz)
     }
-
     fun generateId() = UUID.randomUUID().toString()
 
+    suspend fun setQuizFinished(quizId: String) {
+        val quiz = getQuiz(quizId)
+        quiz!!.isFinished = true
+        quizzesRef.child(auth.currentUser?.uid.toString()).child(quizId).child("finished")
+            .setValue(quiz.isFinished)
+    }
+
+    suspend fun isQuizFinished(quizId: String): Boolean {
+        return suspendCoroutine { continuation ->
+            quizzesRef.child(auth.currentUser?.uid.toString()).child(quizId).child("finished").addListenerForSingleValueEvent(
+                object : ValueEventListener {
+                    override fun onDataChange(dataSnapshot: DataSnapshot) {
+                        continuation.resume(dataSnapshot.value as Boolean)
+                    }
+                    override fun onCancelled(databaseError: DatabaseError) {
+                        continuation.resume(false)
+                    }
+                }
+            )
+        }
+    }
+
     suspend fun addQuestion(question: Question, quizId: String) {
+        Log.d("Quiz--Repository", "addQuestion(): Question: $question")
         val quiz = getQuiz(quizId)
         quiz!!.questions.add(question)
         quizzesRef.child(auth.currentUser?.uid.toString()).child(quizId).child("questions")
             .setValue(quiz.questions)
+    }
+
+    suspend fun updateQuestion(quizId: String, questionId: Int, question: Question) {
+        quizzesRef.child(auth.currentUser?.uid.toString()).child(quizId).child("questions").child(questionId.toString())
+        .addValueEventListener(
+            object : ValueEventListener {
+                override fun onDataChange(dataSnapshot: DataSnapshot) {
+                    dataSnapshot.ref.setValue(question)
+                    Log.d("Quiz--Repository", "updateQuestion(): Question with Id: $questionId")
+                }
+                override fun onCancelled(databaseError: DatabaseError) {
+                    Log.e("Quiz--Repository", "updateQuestion(): onCancelled")
+                }
+            }
+        )
     }
 
     suspend fun getQuiz(quizId: String): Quiz? {
@@ -86,7 +123,6 @@ class QuizRepository {
         }
     }
 
-
     suspend fun getQuizzes(): List<Quiz>? {
         return suspendCoroutine { continuation ->
             val userUid = auth.currentUser?.uid
@@ -117,20 +153,6 @@ class QuizRepository {
         }
     }
 
-    suspend fun updateQuestion(quizId: String, questionId: Int, question: Question) {
-        val questions: ArrayList<Question> = getQuestionsList(quizId)!!
-        questions[questionId] = question
-        quizzesRef.child(auth.currentUser?.uid.toString()).child(quizId).child("questions")
-            .setValue(questions).addOnSuccessListener {
-            Log.i(
-                "Quiz--Repository",
-                " updateQuestion(): Question has been updated, Questions: $questions"
-            )
-        }.addOnCanceledListener {
-            Log.e("Quiz--Repository", " updateQuestion(): Question Cannot be updated")
-        }
-    }
-
     suspend fun isQuestionExistWithId(quizId: String, questionId: String): Boolean {
         val questions: ArrayList<Question> = getQuestionsList(quizId)!!
         return questions.any {
@@ -145,8 +167,6 @@ class QuizRepository {
 
     suspend fun setQuestions(quizId: String, questions: ArrayList<Question>) {
         var quiz: Quiz? = null
-
-
     }
 
     private suspend fun getQuestionsList(quizId: String): ArrayList<Question>? {
@@ -175,7 +195,6 @@ class QuizRepository {
     }
 
 }
-
 /*
 https://quizcreatorapp-419412-default-rtdb.firebaseio.com/
 ----question
@@ -212,3 +231,14 @@ https://quizcreatorapp-419412-default-rtdb.firebaseio.com/
 ------------email:"sahakyansahak404@gmail.com"
 ------------profilePictureUrl:"https://lh3.googleusercontent.com/a/ACg8ocIwsjhzq5VNYGMSsP7_aywNOjI3LaOFgL4HCs2etf1gOtEnD5U=s96-c"
 * */
+
+/*.addListenerForSingleValueEvent(
+    object : ValueEventListener {
+        override fun onDataChange(dataSnapshot: DataSnapshot) {
+            dataSnapshot.ref.setValue(question)
+        }
+        override fun onCancelled(databaseError: DatabaseError) {
+            Log.e("Quiz--Repository", "updateQuestion(): onCancelled")
+        }
+    }
+)*/

@@ -7,6 +7,7 @@ data class Quiz (
     val title: String = "",
     val questionsSize: Int = 0,
     val questions: ArrayList<Question> = emptyArrayList(),
+    var isFinished: Boolean = false
 )
 
 data class Question(

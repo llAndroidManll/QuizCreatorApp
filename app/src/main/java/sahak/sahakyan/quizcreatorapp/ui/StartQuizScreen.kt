@@ -30,10 +30,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.MutableLiveData
-import sahak.sahakyan.quizcreatorapp.viewmodel.startquiz.StartQuizViewModel
+import sahak.sahakyan.quizcreatorapp.viewmodel.StartQuizViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import sahak.sahakyan.quizcreatorapp.R
@@ -55,6 +58,8 @@ fun StartQuizScreen(
     val snackBarVisibleState = remember { mutableStateOf(false) }
     var isCorrectAnswerChosen by remember { mutableStateOf(false) }
     var isChosenAnswerCorrect by remember { mutableStateOf(false) }
+    var isSelectedAnswer by remember { mutableStateOf(false) }
+    var isAnswerChecked by remember { mutableStateOf(false) }
 
     Box(modifier = Modifier.fillMaxSize()) {
         Image(
@@ -71,6 +76,16 @@ fun StartQuizScreen(
             verticalArrangement = Arrangement.SpaceBetween
         ) {
 
+            Text(
+                text = "${viewModel.questionCount.value + 1}/ ${viewModel.questionsSize.value}",
+                style = TextStyle(
+                    color = Color.White,
+                    fontSize = 18.sp,
+                    fontStyle = FontStyle.Italic,
+                    textDecoration = TextDecoration.Underline,
+                    textAlign = TextAlign.Center,
+                )
+            )
 
             // Question Text
             Box(
@@ -136,8 +151,10 @@ fun StartQuizScreen(
                         isCorrectAnswerChosen = isCorrectAnswerChosen,
                         isChosenAnswerCorrect = isChosenAnswerCorrect,
                         onClick = {
-                            selectedOption = answer
-                            selectedOptionIndex = index
+                            if (!isAnswerChecked) {
+                                selectedOption = answer
+                                selectedOptionIndex = index
+                            }
                         },
                     )
                 }
@@ -154,6 +171,7 @@ fun StartQuizScreen(
                 ButtonStyle(
                     text = "Check Answer",
                     onClick = {
+                        isSelectedAnswer = true
                         // Check if an option is selected
                         if (selectedOption != null) {
                             // Check the answer and update UI accordingly
@@ -161,6 +179,7 @@ fun StartQuizScreen(
                                 answerIndex = selectedOptionIndex
                             )
                             isCorrectAnswerChosen = true
+                            isAnswerChecked  = true
                         } else {
                             // Show snackbar or toast to prompt the user to select an option
                             snackBarVisibleState.value = true
@@ -172,9 +191,12 @@ fun StartQuizScreen(
                     ButtonStyle(
                         text = "Next Question",
                         onClick = {
-                            viewModel.incrementQuestionCount()
-
-                            onNextClick()
+                            if(isSelectedAnswer) {
+                                viewModel.incrementQuestionCount()
+                                onNextClick()
+                            } else {
+                                snackBarVisibleState.value = true
+                            }
                         },
                         modifier = Modifier.height(50.dp)
                     )
@@ -193,6 +215,7 @@ fun StartQuizScreen(
 
     }
 }
+
 
 @Composable
 fun ItemsInColumn(

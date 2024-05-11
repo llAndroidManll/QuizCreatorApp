@@ -26,6 +26,9 @@ class QuizViewModel(
     private val _onPreviousStateChange = mutableStateOf(false)
     val onPreviousStateChange: State<Boolean> = _onPreviousStateChange
 
+    private val _isQuizFinished = mutableStateOf(false)
+    val isQuizFinished: State<Boolean> = _isQuizFinished
+
     suspend fun saveQuiz(quiz: Quiz) {
         quizRepository.saveQuiz(quiz)
     }
@@ -51,6 +54,21 @@ class QuizViewModel(
         }
     }
 
+    suspend fun setQuizFinished(quizId: String) {
+        quizRepository.setQuizFinished(quizId)
+    }
+
+    /*suspend fun deleteQuestion(quizId: String, questionId: Int) {
+        quizRepository.deleteQuestion(quizId, questionId)
+    }*/
+
+    suspend fun isQuizFinished(quizId: String): Boolean {
+        return quizRepository.isQuizFinished(quizId)
+    }
+
+    fun setQuizFinishedState(boolean: Boolean) {
+        _isQuizFinished.value = boolean
+    }
 
 
     suspend fun updateQuestion(quizId: String,questionId: Int, question: Question) {
@@ -90,5 +108,6 @@ class QuizViewModel(
         _questionsSize.intValue = 0
         _currentQuestion.value = Question()
         _onPreviousStateChange.value = false
+        _isQuizFinished.value = false
     }
 }

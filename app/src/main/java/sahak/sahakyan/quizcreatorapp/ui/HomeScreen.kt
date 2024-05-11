@@ -54,7 +54,7 @@ fun HomeScreen(
     navController: NavHostController = rememberNavController(),
     onAddClick: () -> Unit = {},
     onRunButton: (String) -> Unit = {},
-    onEditButton: () -> Unit = {},
+    onEditButton: (String) -> Unit = {},
     onShareButton: () -> Unit = {},
 ) {
     val quizzes by viewModel.quizzes
@@ -99,7 +99,7 @@ fun HomeScreen(
                             onRunButton = {
                                 onRunButton(quiz.id)
                             },
-                            onEditButton = onEditButton,
+                            onEditButton = { onEditButton(quiz.id) },
                             onShareButton = onShareButton
 
                         )
@@ -205,12 +205,3 @@ fun CustomIconButton(
         )
     }
 }
-
-/*
-        colors = ButtonColors(
-            containerColor = Color.White,
-            contentColor = Color.Black,
-            disabledContainerColor = Color.Transparent,
-            disabledContentColor = Color.Transparent,
-        ),
-*/

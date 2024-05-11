@@ -1,4 +1,4 @@
-package sahak.sahakyan.quizcreatorapp.viewmodel.startquiz
+package sahak.sahakyan.quizcreatorapp.viewmodel
 
 import android.util.Log
 import androidx.compose.runtime.State
@@ -73,6 +73,10 @@ class StartQuizViewModel (
     fun setQuiz(quiz: Quiz) {
         _currentQuiz.value = quiz
         _questionsSize.intValue = quiz.questions.size
+    }
+
+    fun setQuestionsSize(size: Int) {
+        _questionsSize.intValue = size
     }
 
     fun setDefaultValues() {

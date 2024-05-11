@@ -45,8 +45,13 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import sahak.sahakyan.quizcreatorapp.R
 import sahak.sahakyan.quizcreatorapp.entity.Question
@@ -114,9 +119,15 @@ fun QuizCreatorScreen(
             verticalArrangement = Arrangement.SpaceBetween
         ) {
 
-            CustomLinearProgressIndicator(
-                modifier = Modifier.fillMaxWidth().border(1.dp, Color.LightGray,RoundedCornerShape(50)),
-                progress = (viewModel.questionCount.value + 1) / (viewModel.questionsSize.value).toFloat()
+            Text(
+                text = "${viewModel.questionCount.value + 1}/ ${viewModel.questionsSize.value}",
+                style = TextStyle(
+                    color = Color.White,
+                    fontSize = 18.sp,
+                    fontStyle = FontStyle.Italic,
+                    textDecoration = TextDecoration.Underline,
+                    textAlign = TextAlign.Center,
+                )
             )
 
             OutlinedTextField(
@@ -275,7 +286,6 @@ fun QuizCreatorScreen(
                                 onNextClick(
                                     viewModel.currentQuestion.value
                                 )
-                                viewModel.incrementQuestionCount()
                             }
                         },
                         modifier = Modifier.height(50.dp)

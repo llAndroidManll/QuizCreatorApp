@@ -42,7 +42,7 @@ import sahak.sahakyan.quizcreatorapp.viewmodel.HomeViewModel
 import sahak.sahakyan.quizcreatorapp.viewmodel.QuizViewModel
 import sahak.sahakyan.quizcreatorapp.viewmodel.SignInViewModel
 import sahak.sahakyan.quizcreatorapp.viewmodel.UserViewModel
-import sahak.sahakyan.quizcreatorapp.viewmodel.startquiz.StartQuizViewModel
+import sahak.sahakyan.quizcreatorapp.viewmodel.StartQuizViewModel
 
 class MainActivity : ComponentActivity() {
 
@@ -135,35 +135,6 @@ class MainActivity : ComponentActivity() {
                                 }
                             )
                         }
-                        composable(BottomBar.Home.route) {
-                            LaunchedEffect(key1 = true) {
-                                lifecycleScope.launch {
-                                    homeViewModel.setQuizzes(
-                                        homeViewModel.getQuizzes()!!
-                                    )
-                                }
-                            }
-                            HomeScreen(
-                                viewModel = homeViewModel,
-                                navController = navController,
-                                onAddClick = {
-                                    navController.navigate(NavigationScreens.CreateQuiz.route)
-                                },
-                                onRunButton = {id ->
-
-                                    lifecycleScope.launch {
-                                        startQuizViewModel.getQuiz(id)
-                                            ?.let { it1 -> startQuizViewModel.setQuiz(it1) }
-                                        Log.d(
-                                            "Quiz--Composable--Home",
-                                            "Starting Quiz with quiz: ${startQuizViewModel.currentQuiz.value}"
-                                        )
-                                        navController.navigate(NavigationScreens.StartQuiz.route + "/$id")
-                                    }
-                                    }
-
-                            )
-                        }
                         composable(BottomBar.Profile.route) {
                             ProfileScreen(
                                 userData = googleAuthUiClient.getSignedInUser(),
@@ -180,28 +151,76 @@ class MainActivity : ComponentActivity() {
                                 }
                             )
                         }
+                        composable(BottomBar.Home.route) {
+                            LaunchedEffect(key1 = true) {
+                                lifecycleScope.launch {
+                                    homeViewModel.setQuizzes(
+                                        homeViewModel.getQuizzes()!!
+                                    )
+                                }
+                            }
+                            HomeScreen(
+                                viewModel = homeViewModel,
+                                navController = navController,
+                                onAddClick = {
+                                    navController.navigate(NavigationScreens.CreateQuiz.route)
+                                },
+                                onRunButton = {id ->
+                                    lifecycleScope.launch {
+                                        val bool = quizViewModel.isQuizFinished(id)
+                                        if (bool) {
+                                            startQuizViewModel.getQuiz(id)?.let { it1 ->
+                                                startQuizViewModel.setQuiz(it1)
+//                                                startQuizViewModel.setQuestionsSize(it1.questionsSize)
+                                            }
+//                                            Log.d("Quiz--Composable--Home","Starting Quiz with quiz: ${startQuizViewModel.currentQuiz.value}")
+                                            navController.navigate(NavigationScreens.StartQuiz.route + "/$id")
+                                        } else {
+//                                            Log.d("Quiz--Composable--Home","Navigating to Home Page")
+                                            navController.navigate(BottomBar.Home.route)
+                                        }
+
+
+                                    }
+                                },
+                                onEditButton = {id ->
+                                    lifecycleScope.launch {
+                                        if (quizViewModel.isQuizFinished(id)) {
+                                            quizViewModel.setQuizFinishedState(true)
+                                            quizViewModel.getQuestion(id,quizViewModel.questionCount.value)?.let { quizViewModel.setCurrentQuestion(it) }
+                                            quizViewModel.setOnPreviousStateChange(true)
+                                            quizViewModel.setQuestionsSize(quizViewModel.getQuiz(id)!!.questionsSize)
+                                            Log.d("Quiz--Composable--QuizCreator","QuizViewModel Questions Size: ${quizViewModel.questionsSize.value}")
+                                        }
+                                        navController.navigate(NavigationScreens.QuizCreator.route + "/$id")
+                                    }
+                                }
+                            )
+                        }
                         composable(NavigationScreens.QuizCreator.route + "/{quizId}") { backStackEntry ->
                             val quizId = backStackEntry.arguments?.getString("quizId") ?: ""
-
-
-                            if (quizViewModel.questionsSize.value == quizViewModel.questionCount.value) {
+                            if (!quizViewModel.isQuizFinished.value && quizViewModel.questionsSize.value == quizViewModel.questionCount.value) {
+                                Log.i("Quiz--Composable--QuizCreator","setting OnPreviousStateChange to false")
                                 quizViewModel.setOnPreviousStateChange(false)
                             }
-
                             QuizCreatorScreen(
                                 viewModel = quizViewModel,
                                 onNextClick = { question ->
                                     if(quizViewModel.onPreviousStateChange.value) {
                                         lifecycleScope.launch {
+                                            Log.i("Quiz--Composable--QuizCreator","Updating question with id: ${quizViewModel.questionCount.value}")
                                             quizViewModel.updateQuestion(
                                                 question = question,
                                                 quizId = quizId,
                                                 questionId = quizViewModel.questionCount.value
                                             )
+                                            quizViewModel.incrementQuestionCount()
+                                            Log.i("Quiz--Composable--QuizCreator","QuizViewModel Question Count: ${quizViewModel.questionCount.value}")
                                             val nullableQuestion: Question = quizViewModel.getQuestion(quizId, quizViewModel.questionCount.value)!!
                                             quizViewModel.setCurrentQuestion(nullableQuestion)
                                         }
                                     } else {
+                                        Log.d("Quiz--Composable--QuizCreator", "QuizViewModel adding new question")
                                         question.id = quizViewModel.questionCount.value
                                         lifecycleScope.launch {
                                             quizViewModel.addQuestion(
@@ -209,6 +228,7 @@ class MainActivity : ComponentActivity() {
                                                 quizId = quizId
                                             )
                                         }
+                                        quizViewModel.incrementQuestionCount()
                                         quizViewModel.setCurrentQuestion(Question())
                                     }
                                     navController.navigate(NavigationScreens.QuizCreator.route + "/$quizId")
@@ -224,12 +244,21 @@ class MainActivity : ComponentActivity() {
                                     navController.navigate(NavigationScreens.QuizCreator.route + "/$quizId")
                                 },
                                 onFinishClick = { question ->
-                                    question.id = quizViewModel.questionCount.value
                                     lifecycleScope.launch {
-                                        quizViewModel.addQuestion(
-                                            question = question,
-                                            quizId = quizId
-                                        )
+                                        if(quizViewModel.isQuizFinished.value) {
+                                            quizViewModel.updateQuestion(
+                                                question = question,
+                                                quizId = quizId,
+                                                questionId = quizViewModel.questionCount.value
+                                            )
+                                        } else {
+                                            question.id = quizViewModel.questionCount.value
+                                            quizViewModel.addQuestion(
+                                                question = question,
+                                                quizId = quizId
+                                            )
+                                            quizViewModel.setQuizFinished(quizId)
+                                        }
                                     }
                                     quizViewModel.setDefaultValues()
                                     navController.navigate(BottomBar.Home.route)
