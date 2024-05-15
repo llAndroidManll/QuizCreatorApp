@@ -5,13 +5,20 @@ import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import sahak.sahakyan.quizcreatorapp.entity.Question
 import sahak.sahakyan.quizcreatorapp.entity.Quiz
+import sahak.sahakyan.quizcreatorapp.exception.CustomException
 import sahak.sahakyan.quizcreatorapp.repository.QuizRepository
 
 class QuizViewModel(
     private val quizRepository: QuizRepository = QuizRepository()
 ) : ViewModel() {
+
+    private val _state = MutableStateFlow(CreateQuizState())
+    val state = _state.asStateFlow()
 
     private val _questionCount = mutableIntStateOf(0)
     val questionCount: State<Int> = _questionCount
@@ -33,22 +40,85 @@ class QuizViewModel(
         quizRepository.saveQuiz(quiz)
     }
 
+    // Done
     suspend fun addQuestion(quizId: String, question: Question) {
-        quizRepository.addQuestion(question, quizId)
+        try {
+            _state.update {
+                it.copy(
+                    isLoading = true
+                )
+            }
+            quizRepository.addQuestion(question, quizId)
+            _state.update {
+                it.copy(
+                    isLoading = false
+                )
+            }
+        } catch (e: CustomException) {
+            _state.update {
+                it.copy(
+                    isLoading = false,
+                    error = e.message
+                )
+            }
+        }
     }
 
-    suspend fun getQuiz(quizId: String): Quiz? {
-        return quizRepository.getQuiz(quizId)
+    // Done
+    suspend fun getQuiz(quizId: String): Quiz {
+        try {
+            _state.update {
+                it.copy(
+                    isLoading = true
+                )
+            }
+            val quiz = quizRepository.getQuiz(quizId)
+            Log.d("Quiz--StartQuizViewModel", "getQuiz() Quiz: $quiz")
+            _state.update {
+                it.copy(
+                    isLoading = false
+                )
+            }
+            return quiz
+        } catch (e: CustomException) {
+            Log.e("Quiz--StartQuizViewModel", "getQuiz() Error: ${e.message}", e)
+            _state.update {
+                it.copy(
+                    isLoading = false,
+                    error = e.message
+                )
+            }
+            return Quiz(
+                id = "-1"
+            )
+        }
     }
 
+    // Done
     suspend fun getQuestion(quizId: String, questionId: Int): Question? {
         return try {
+            _state.update {
+                it.copy(
+                    isLoading = true
+                )
+            }
             val question = quizRepository.getQuestion(quizId, questionId)
             if (question != null) {
                 _currentQuestion.value = question
             }
+            _state.update {
+                it.copy(
+                    isLoading = false
+                )
+            }
             question
         } catch (e: NullPointerException) {
+            _state.update {
+                it.copy(
+                    isLoading = false,
+                    error = e.message
+                )
+            }
             Log.d("Quiz--QuizViewModel", "QuizViewModel: nullableQuestion is null")
             Question(id = questionCount.value)
         }
@@ -58,9 +128,28 @@ class QuizViewModel(
         quizRepository.setQuizFinished(quizId)
     }
 
-    /*suspend fun deleteQuestion(quizId: String, questionId: Int) {
-        quizRepository.deleteQuestion(quizId, questionId)
-    }*/
+    suspend fun deleteQuiz(quizId: String) {
+        try {
+            _state.update {
+                it.copy(
+                    isLoading = true
+                )
+            }
+            quizRepository.deleteQuiz(quizId)
+            _state.update {
+                it.copy(
+                    isLoading = false
+                )
+            }
+        } catch (e: CustomException) {
+            _state.update {
+                it.copy(
+                    isLoading = false,
+                    error = e.message
+                )
+            }
+        }
+    }
 
     suspend fun isQuizFinished(quizId: String): Boolean {
         return quizRepository.isQuizFinished(quizId)
@@ -72,7 +161,26 @@ class QuizViewModel(
 
 
     suspend fun updateQuestion(quizId: String,questionId: Int, question: Question) {
-        quizRepository.updateQuestion(quizId, questionId, question)
+        try {
+            _state.update {
+                it.copy(
+                    isLoading = true
+                )
+            }
+            quizRepository.updateQuestion(quizId, questionId, question)
+            _state.update {
+                it.copy(
+                    isLoading = false
+                )
+            }
+        } catch (e: CustomException) {
+            _state.update {
+                it.copy(
+                    isLoading = false,
+                    error = e.message
+                )
+            }
+        }
     }
 
     suspend fun isQuestionExistWithId(quizId: String,questionId: String) : Boolean {
@@ -104,10 +212,22 @@ class QuizViewModel(
     }
 
     fun setDefaultValues() {
+        _state.update {
+            it.copy(
+                isLoading = true,
+                error = null
+            )
+        }
         _questionCount.intValue = 0
         _questionsSize.intValue = 0
         _currentQuestion.value = Question()
         _onPreviousStateChange.value = false
         _isQuizFinished.value = false
+        _state.update {
+            it.copy(
+                isLoading = false,
+                error = null
+            )
+        }
     }
 }

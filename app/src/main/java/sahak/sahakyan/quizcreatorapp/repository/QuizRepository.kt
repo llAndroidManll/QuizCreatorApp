@@ -11,6 +11,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import sahak.sahakyan.quizcreatorapp.entity.Question
 import sahak.sahakyan.quizcreatorapp.entity.Quiz
+import sahak.sahakyan.quizcreatorapp.exception.CustomException
 import java.util.UUID
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
@@ -22,6 +23,13 @@ class QuizRepository {
     private val auth = FirebaseAuth.getInstance()
     private val quizzesRef = database.getReference("quizzes")
 
+
+    suspend fun deleteQuiz(quizId: String) {
+        quizzesRef.child(auth.currentUser?.uid.toString()).child(quizId).removeValue().addOnFailureListener {
+            throw CustomException(it.message.toString())
+        }
+    }
+
     suspend fun saveQuiz(quiz: Quiz) {
         quizzesRef.child(auth.currentUser?.uid.toString()).child(quiz.id).setValue(quiz)
     }
@@ -29,7 +37,7 @@ class QuizRepository {
 
     suspend fun setQuizFinished(quizId: String) {
         val quiz = getQuiz(quizId)
-        quiz!!.isFinished = true
+        quiz.isFinished = true
         quizzesRef.child(auth.currentUser?.uid.toString()).child(quizId).child("finished")
             .setValue(quiz.isFinished)
     }
@@ -49,14 +57,18 @@ class QuizRepository {
         }
     }
 
+    // Done
     suspend fun addQuestion(question: Question, quizId: String) {
         Log.d("Quiz--Repository", "addQuestion(): Question: $question")
         val quiz = getQuiz(quizId)
-        quiz!!.questions.add(question)
+        quiz.questions.add(question)
         quizzesRef.child(auth.currentUser?.uid.toString()).child(quizId).child("questions")
-            .setValue(quiz.questions)
+            .setValue(quiz.questions).addOnFailureListener {
+                throw CustomException(it.message.toString())
+            }
     }
 
+    // Done
     suspend fun updateQuestion(quizId: String, questionId: Int, question: Question) {
         quizzesRef.child(auth.currentUser?.uid.toString()).child(quizId).child("questions").child(questionId.toString())
         .addValueEventListener(
@@ -66,13 +78,14 @@ class QuizRepository {
                     Log.d("Quiz--Repository", "updateQuestion(): Question with Id: $questionId")
                 }
                 override fun onCancelled(databaseError: DatabaseError) {
-                    Log.e("Quiz--Repository", "updateQuestion(): onCancelled")
+                    throw CustomException(databaseError.message)
                 }
             }
         )
     }
 
-    suspend fun getQuiz(quizId: String): Quiz? {
+    // Done
+    suspend fun getQuiz(quizId: String): Quiz {
         return suspendCoroutine { continuation ->
             val userUid = auth.currentUser?.uid
             if (userUid != null) {
@@ -80,22 +93,24 @@ class QuizRepository {
                     .addListenerForSingleValueEvent(object : ValueEventListener {
                         override fun onDataChange(dataSnapshot: DataSnapshot) {
                             val quiz = dataSnapshot.getValue(Quiz::class.java)
-
-                            Log.d("Quiz--Repository", "getQuiz(): Quiz: $quiz")
-
-                            continuation.resume(quiz)
+                            if(quiz != null) {
+                                continuation.resume(quiz)
+                                Log.d("Quiz--Repository", "getQuiz(): Quiz: $quiz")
+                            } else {
+                                continuation.resumeWithException(CustomException("Quiz has been found but it is null"))
+                            }
                         }
-
                         override fun onCancelled(databaseError: DatabaseError) {
-                            continuation.resume(null)
+                            continuation.resumeWithException(CustomException("Quiz cannot be found because of $databaseError"))
                         }
                     })
             } else {
-                continuation.resume(null)
+                continuation.resumeWithException(CustomException("Quiz cannot be found"))
             }
         }
     }
 
+    // Done
     suspend fun getQuestion(quizId: String, questionId: Int): Question? {
         Log.d("Quiz--Repository", "getQuestion(): Question id: $questionId")
         return suspendCoroutine { continuation ->
@@ -123,6 +138,7 @@ class QuizRepository {
         }
     }
 
+    // Done
     suspend fun getQuizzes(): List<Quiz>? {
         return suspendCoroutine { continuation ->
             val userUid = auth.currentUser?.uid
@@ -144,11 +160,11 @@ class QuizRepository {
 
                         override fun onCancelled(databaseError: DatabaseError) {
                             Log.e("Quiz--Repository", "getQuizzes(): onCancelled")
-                            continuation.resume(null)
+                            continuation.resumeWithException(CustomException(databaseError.message))
                         }
                     })
             } else {
-                continuation.resume(null)
+                continuation.resumeWithException(CustomException("Quizzes cannot be found"))
             }
         }
     }
@@ -163,7 +179,6 @@ class QuizRepository {
     suspend fun getQuestionsListSize(quizId: String): Int {
         return getQuestionsList(quizId)!!.size
     }
-
 
     suspend fun setQuestions(quizId: String, questions: ArrayList<Question>) {
         var quiz: Quiz? = null

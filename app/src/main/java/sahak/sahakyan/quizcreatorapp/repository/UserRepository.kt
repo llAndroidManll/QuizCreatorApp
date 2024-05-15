@@ -41,8 +41,4 @@ class UserRepository {
             usersRef.child(auth.currentUser?.uid.toString()).setValue(getCurrentUser())
         }
     }
-
-
-
-
 }

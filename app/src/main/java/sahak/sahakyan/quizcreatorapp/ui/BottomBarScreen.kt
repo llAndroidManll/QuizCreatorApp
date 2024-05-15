@@ -31,7 +31,6 @@ import sahak.sahakyan.quizcreatorapp.navigation.BottomBar
 fun BottomBar(navController: NavHostController) {
     val screens = listOf(
         BottomBar.Home,
-        BottomBar.Report,
         BottomBar.Profile
     )
 

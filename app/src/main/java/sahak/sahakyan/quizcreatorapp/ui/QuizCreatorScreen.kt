@@ -363,7 +363,7 @@ fun QuizCreatorScreen(
                 Button(onClick = { showAnswersDuplicationDialog.value = false }) {
                     Text(text = "OK")
                 }
-            }
+            },
         )
     }
 }

@@ -21,12 +21,11 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonColors
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ButtonDefaults.buttonColors
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -55,7 +54,7 @@ fun HomeScreen(
     onAddClick: () -> Unit = {},
     onRunButton: (String) -> Unit = {},
     onEditButton: (String) -> Unit = {},
-    onShareButton: () -> Unit = {},
+    onDeleteButton: (String) -> Unit,
 ) {
     val quizzes by viewModel.quizzes
 
@@ -100,8 +99,9 @@ fun HomeScreen(
                                 onRunButton(quiz.id)
                             },
                             onEditButton = { onEditButton(quiz.id) },
-                            onShareButton = onShareButton
-
+                            onDeleteButton = {
+                                onDeleteButton(quiz.id)
+                            }
                         )
                     }
                 }
@@ -143,7 +143,7 @@ fun ItemBox(
     isButtonVisible: Boolean = false,
     onRunButton: () -> Unit = {},
     onEditButton: () -> Unit = {},
-    onShareButton: () -> Unit = {},
+    onDeleteButton: () -> Unit = {},
 ) {
     Row(
         modifier = Modifier
@@ -171,7 +171,7 @@ fun ItemBox(
                 Spacer(modifier = Modifier.width(10.dp))
                 CustomIconButton(onClick = onEditButton, imageVector = Icons.Default.Edit)
                 Spacer(modifier = Modifier.width(10.dp))
-                CustomIconButton(onClick = onShareButton, imageVector = Icons.Default.Share)
+                CustomIconButton(onClick = onDeleteButton, imageVector = Icons.Default.Delete)
             }
         } else {
             Spacer(modifier = Modifier.width(120.dp)) // Spacer to maintain layout consistency

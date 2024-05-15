@@ -6,13 +6,21 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.lifecycle.ViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import sahak.sahakyan.quizcreatorapp.entity.Question
 import sahak.sahakyan.quizcreatorapp.entity.Quiz
+import sahak.sahakyan.quizcreatorapp.exception.CustomException
 import sahak.sahakyan.quizcreatorapp.repository.QuizRepository
+import sahak.sahakyan.quizcreatorapp.sign_in.SignInState
 
 class StartQuizViewModel (
     private val quizRepository: QuizRepository = QuizRepository()
 ) : ViewModel() {
+
+
+    private val _state = MutableStateFlow(StartQuizState())
+    val state = _state.asStateFlow()
 
     private val _correctAnswersCount = mutableIntStateOf(0)
     val correctAnswersCount: State<Int> = _correctAnswersCount
@@ -38,10 +46,33 @@ class StartQuizViewModel (
     val currentQuestion: StateFlow<Question?> = _currentQuestion
 
 
-    suspend fun getQuiz(quizId: String): Quiz? {
-        val quiz = quizRepository.getQuiz(quizId)
-        Log.d("Quiz--StartQuizViewModel", "getQuiz() Quiz: $quiz")
-        return quiz
+    suspend fun getQuiz(quizId: String): Quiz {
+        try {
+            _state.update {
+                it.copy(
+                    isLoading = true
+                )
+            }
+            val quiz = quizRepository.getQuiz(quizId)
+            Log.d("Quiz--StartQuizViewModel", "getQuiz() Quiz: $quiz")
+            _state.update {
+                it.copy(
+                    isLoading = false
+                )
+            }
+            return quiz
+        } catch (e: CustomException) {
+            Log.e("Quiz--StartQuizViewModel", "getQuiz() Error: ${e.message}", e)
+            _state.update {
+                it.copy(
+                    isLoading = false,
+                    error = e.message
+                )
+            }
+            return Quiz(
+                id = "-1"
+            )
+        }
     }
 
     fun checkAnswer(answerIndex: Int): Boolean {

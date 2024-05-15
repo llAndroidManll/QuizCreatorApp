@@ -17,13 +17,13 @@ sealed class BottomBar(
         icon_focused = R.drawable.ic_bottom_home_focused
     )
 
-    // for report
+    /*// for report
     data object Report: BottomBar(
         route = "report",
         title = "Report",
         icon = R.drawable.ic_bottom_report,
         icon_focused = R.drawable.ic_bottom_report_focused
-    )
+    )*/
 
     // for report
     data object Profile: BottomBar(

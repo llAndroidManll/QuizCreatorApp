@@ -31,6 +31,8 @@ fun OutlinedTextField(
         .fillMaxWidth()
         .height(1.dp)
         .background(Color.White),
+    textColor: Color = Color.White,
+    textFieldColor: Color = Color.White,
 ) {
     Column(
         modifier = columnModifier,
@@ -43,12 +45,12 @@ fun OutlinedTextField(
             placeholder = {
                 Text(
                     text = placeHolder,
-                    color = Color.White,
+                    color = textColor,
                 )
             },
             colors = TextFieldDefaults.outlinedTextFieldColors(
-                unfocusedBorderColor = Color.Transparent,
-                focusedBorderColor = Color.Transparent,
+                unfocusedBorderColor = textFieldColor,
+                focusedBorderColor = textFieldColor,
             ),
         )
         Spacer(
